@@ -1,7 +1,7 @@
-= A Toy Autonomous Monster Truck readme
+= An Autonomous Toy Monster Truck readme
 
 == Project overview
-The goal here is to make a 'autonomous' toy-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start.
+The goal here is to make a 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start.
 
 The 'brain' of the truck will be an ESP32. I'll use multiple types of sensors.
 
