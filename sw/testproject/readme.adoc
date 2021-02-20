@@ -1,0 +1,2 @@
+In this folder a test-project for trying out sensors and other hardware
+ 
