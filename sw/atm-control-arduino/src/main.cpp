@@ -4,6 +4,7 @@
 #include "usensor.h"
 #include "light.h"
 
+//Define pins name and GPIO#
 #define M1E_PIN 2
 #define M1F_PIN 4
 #define M1R_PIN 5
@@ -17,7 +18,6 @@
 #define FLED  32
 
 
-//Motor mymotor = Motor(M1E_PIN,M1F_PIN,M1R_PIN);
 Usensor leftdistance(TLEFT,ELEFT); 
 Usensor rightdistance(TRIGHT,ERIGHT); 
 Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
@@ -28,7 +28,6 @@ void setup() {
   //Serial Port begin
   Serial.begin (9600);
   Serial.println("ATMT started!");
-   //Trig, echo
   leftdistance.SetUp();
   rightdistance.SetUp();
   motor.SetUp();
