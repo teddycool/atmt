@@ -11,7 +11,7 @@ This repo will contain everything needed in this project and also try to explain
 
 * doc: All documentation and images, including a full workdescription
 * hw: hardware including pcb layout and all the schematics. References to used components etc
-* sw: all software, not that much yet..
+* sw: all software, not that much yet but some starters for different modules.
 
 
 image::doc/images/20201212_103947.jpg["Starters"]
