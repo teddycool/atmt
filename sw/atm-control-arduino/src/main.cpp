@@ -65,10 +65,14 @@ void loop() {
   Serial.println("Right: " + String(rightdistance.GetDistance()));  
   Serial.println("Left: " + String(leftdistance.GetDistance())); 
   Serial.println("AccX: " + String(dynamics.GetAccX())); 
-  Serial.println("Gyro: " + String(dynamics.GetGyroX()));
+  Serial.println("AccY: " + String(dynamics.GetAccY())); 
+  Serial.println("AccZ: " + String(dynamics.GetAccZ())); 
+  Serial.println("GyroX: " + String(dynamics.GetGyroX()));
+  Serial.println("GyroY: " + String(dynamics.GetGyroY()));
+  Serial.println("GyroZ: " + String(dynamics.GetGyroZ()));
   delay(1000);
   steering.Reverse();
   motor.Reverse();
   light.Off();
-  delay(1000);
+  delay(1500);
 }

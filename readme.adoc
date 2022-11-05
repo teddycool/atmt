@@ -1,11 +1,13 @@
 = An Autonomous Toy Monster Truck readme
 
 == Project overview
-The goal here is to make a 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start.
+The goal here is to make a 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start. In previous projects I have had some problems with the mechanics  and therefore I choosed this solution.
 
-The 'brain' of the truck will be an ESP32. I'll use multiple types of sensors.
+The 'brain' of the truck is an ESP32. I'll use multiple types of sensors.
 
-This repo will contain everything needed in this project and also try to explain the progress and results.
+However, it is possible to use my PCB-design or the schematics and build a sort of control-board for the motors and then have the actual control-system on an other device, such as a raspberry-pi. This might be a new project-branch in the future.
+
+This repo will contain everything needed in this project and also try to explain the progress and eventually the results.
 
 == Repo layout:
 

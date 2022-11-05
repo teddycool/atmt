@@ -4,6 +4,7 @@ This is the working description for the hardware. When this is done we have a ni
 
 == Starting material
 I started with a cheap radio-controlled 'monster-truck' -toy in scale 1:24. I bought mine at Biltema for about 200 SEK (20€). I actually bought two of them because these models probably changes pretty fast and it´s good idea to have a spare, for several reasons...
+https://www.biltema.se/fritid/leksaker/radiostyrda-leksaker/rc-turbo-dragon-truck-124-24-ghz-2000040669
 
 image::images/20201212_103947.jpg["Starters"]
 
@@ -63,10 +64,12 @@ The circutry is shown in mt-schema-v1.pdf
 === PCB
 As mentioned above I used the same form-factor and measurements as the original PCB to have a good fit in the chassis. The first version of the PCB is two-sided has the MCU on the top side and the power-supply and the motor-control on the back-side. I am using SMD parts as much as possible to reduce the size. The version 1 of the PCB (shown on the pictures below)had some issues and there is now a version 2 in the /hw/pcb folder.
 
+The PCB is a shared design at aisler.net: https://aisler.net/p/JDIHIDIT
+
 There are connectors for the motors, the distance-sensors, 2x I2C, programming interface, boot-mode and JTAG
 
-image::images/pcb3.png["PCB top"]
-image::images/pcb4.png["PCB bottom"]
+image::images/pcb6.png["PCB top"]
+image::images/pcb5.png["PCB bottom"]
 
 
 == Car body
