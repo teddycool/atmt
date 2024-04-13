@@ -1,0 +1,28 @@
+
+# Setup for the ScaniaHack (proposal)
+
+
+
+## Oveview and workflow
+
+image::doc/images/ScaniaHack-setup.jpg["Setup"]
+
+
+## Network:
+
+
+
+
+## OTA:
+
+https://randomnerdtutorials.com/esp32-ota-over-the-air-vs-code/
+
+## (Some) work-groups/areas
+
+* Architecture
+* Driver-control
+* Sensor sw components
+* Server used for logging
+* 
+
+

@@ -1,5 +1,15 @@
+
+
 #include <Arduino.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <AsyncElegantOTA.h>
 #include <FastLED.h>
+
+const char* ssid = "AndroidAP-psk";
+const char* password = "Yeti1704";
+
 
 #define LED_PIN     32
 #define COLOR_ORDER GRB
@@ -11,7 +21,6 @@
 #define TRIG1_PIN 26
 #define ECHO1_PIN 25
 
-
 #define BRIGHTNESS  200
 
 
@@ -21,9 +30,33 @@ long cm;
 
 
 
-void setup() {
- //Serial Port begin
-  Serial.begin (9600);
+AsyncWebServer server(80);
+
+void setup(void) {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
+
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Hi! I am ESP32.");
+  });
+
+  AsyncElegantOTA.begin(&server);    // Start ElegantOTA
+  server.begin();
+  Serial.println("HTTP server started");
+
   Serial.println("Pin set up Started!");
   //Define inputs and outputs
   pinMode(TRIG1_PIN, OUTPUT);
@@ -41,8 +74,12 @@ void setup() {
   Serial.println("Pin set up finished!");
 }
 
-void loop() {
-   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+void loop(void) {
+
+  Serial.println("I am updated!");
+  delay(2000);
+
+  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   Serial.println("Distance sensor test...");
   digitalWrite(TRIG1_PIN, LOW);
@@ -110,7 +147,5 @@ void loop() {
   Serial.println("White...");
   FastLED.show();
   delay(500);
+
 }
-
-
-

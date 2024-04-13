@@ -1,0 +1,48 @@
+# Used hardware components
+
+The main hardware components with some references.
+
+## ESP32 WROOM
+ESP32-WROOM-32UE-N16
+
+https://www.mouser.se/c/?q=ESP32-WROOM-32UE-N16
+
+
+## Motor-control
+
+L293D (SMD)
+
+https://www.mouser.se/datasheet/2/389/l293d-1849134.pdf
+
+## Ultrasonic sensor
+
+HC-SR04 
+
+User-guide: 
+https://www.handsontec.com/dataspecs/HC-SR04-Ultrasonic.pdf
+
+## Accelerometer/gyro/compass
+
+GY-521
+
+https://www.instructables.com/GY-521-MPU6050-3-Axis-Acceleration-Gyroscope-6DOF-/
+https://randomnerdtutorials.com/arduino-mpu-6050-accelerometer-gyroscope/#more-101585
+
+
+## Power-supply
+
+3xAA and a 3.3 low dropout voltage regulator LP2989 (SMD) 
+
+https://www.electrokit.com/upload/product/40352/40352989/LP2989.pdf
+
+## Material cost pcb (approx sek)
+
+Around 300 sek divided as:
+
+* PCB (Aisler.net):  75
+* ESP32 (mouser.se): 40
+* L293 (mouser.se): 100
+* LP2989 (electrokit.se): 60
+* Pinheaders, smd-button, capacitors etc...
+
+
