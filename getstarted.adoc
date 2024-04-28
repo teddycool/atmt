@@ -1,0 +1,23 @@
+# How to get started
+
+## Development environment
+
+Visual studio code, install it for your platform from https://code.visualstudio.com/
+
+When vscode is up and running select extensions and search for platformio. This is a complete toolkit for all kind of embedded development. We will use the arduino platform.
+
+We are using C++ and installing some extensions for that is a good idea. 
+
+At ScaniaHack will will probably use PHP, Python and other things as well, and vscode is good for that too :-)
+
+Now, when the development environment is installed, clone the github repo and open the folder named atm-control-arduino in vscode. 
+
+My guess is that the problems starts here....
+
+But hopefully it is possible to build the project and if you have an esp32 dev-board ready it might even be possible to download it.
+
+The atm-control-arduino-project will demostrate how to connect to wifi, read from all the sensors, run the motors, post simple logprints to our server and be prepared for OTA. It will be continuosly updated until the ScaniaHack begins.
+
+It is a very simple game-loop type of thing basically for testing the hardware and with no vehicle control logic at all.
+
+

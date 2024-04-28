@@ -23,7 +23,12 @@ public:
   void SetUp();
   void Update();
   float GetAccX();
+  float GetAccY();
+  float GetAccZ();
+
   float GetGyroX();
+  float GetGyroY();
+  float GetGyroZ();
 
 };
 
