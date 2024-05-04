@@ -1,0 +1,5 @@
+# The test-software
+
+
+This is the test software, showing how the sensors works, how we do OTA and how we post log-messages to the backend.
+

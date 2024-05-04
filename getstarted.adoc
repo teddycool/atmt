@@ -2,22 +2,34 @@
 
 ## Development environment
 
-Visual studio code, install it for your platform from https://code.visualstudio.com/
+You will Python3 and some kind of git-client.
 
-When vscode is up and running select extensions and search for platformio. This is a complete toolkit for all kind of embedded development. We will use the arduino platform.
+The main software is Visual Studio Code, install it for your platform from https://code.visualstudio.com/
+
+When vscode is up and running, select extensions and search for platformio. This is a complete toolkit for all kind of embedded development. We will use the arduino platform.
 
 We are using C++ and installing some extensions for that is a good idea. 
 
-At ScaniaHack will will probably use PHP, Python and other things as well, and vscode is good for that too :-)
+At ScaniaHack will will probably use PHP, Python and other stuff as well, and vscode is really good for that too.
 
-Now, when the development environment is installed, clone the github repo and open the folder named atm-control-arduino in vscode. 
+Now, when the development environment is installed, clone the github repo.
+
+## How to clone
+
+* Create a github-account if you don't allready have one
+* Go the the local directory for your projects and start a terminal
+* run "git clone https://github.com/teddycool/atmt.git"  to get all the files
+* You can now create a new local branch to work on and then use a pull-request to show and discuss the changes you made before merging to the main-branch. More info here: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
+
+
+## Open the test-project in VsCode
+
+Now, start VsCode and open the folder named .../sw/atm-test-control in vscode. 
 
 My guess is that the problems starts here....
 
 But hopefully it is possible to build the project and if you have an esp32 dev-board ready it might even be possible to download it.
 
-The atm-control-arduino-project will demostrate how to connect to wifi, read from all the sensors, run the motors, post simple logprints to our server and be prepared for OTA. It will be continuosly updated until the ScaniaHack begins.
+The atm-test-control project demostrates how to connect to wifi, read from all the sensors, run the motors, post simple logprints to our server and be prepared for OTA. It will be continuosly updated until the ScaniaHack begins.
 
 It is a very simple game-loop type of thing basically for testing the hardware and with no vehicle control logic at all.
-
-

@@ -7,6 +7,8 @@
 
 image::doc/images/ScaniaHack-setup.jpg["Setup"]
 
+At the hack, preferably use a private laptop since you are the admin for it,  and it doesn't have limitations for used networks, firewall-settings and softwares. 
+
 
 ## Network:
 
@@ -17,7 +19,7 @@ The netwok must be connected to internet, either via a networkcable to Scanias g
 
 ## Webserver
 
-A 'LAMP server' with a database to store and sort loggs from the cars while driving.
+A 'LAMP server' with a database to store and sort loggs from the cars while driving and some area for a common storage.
 
 https://randomnerdtutorials.com/raspberry-pi-apache-mysql-php-lamp-server/
 
@@ -31,6 +33,6 @@ https://randomnerdtutorials.com/esp32-ota-over-the-air-vs-code/
 * Driver-control
 * Sensor sw components
 * Server used for logging
-* 
+* git DD
 
 
