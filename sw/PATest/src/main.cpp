@@ -41,15 +41,14 @@ void setup() {
   }
   yield();
   {
-  BlinkParams params = {LED2, 100};
+  BlinkParams params = {LED2, 135};
   xTaskCreate(blinker,"blinker2",2000,&params,1,NULL);
   }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:(500/portTICK_PERION_MS);
- //yield();
+  // put your main code here, to run repeatedly
 }
 
-// put function definitions here:
+
 
