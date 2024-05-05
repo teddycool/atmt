@@ -1,37 +1,55 @@
 #include <Arduino.h>
 
 #define LED 2
+#define LED2 15
 
-// put function declarations here:
-int myFunction(int, int);
+struct BlinkParams {
+    int pin;
+    int delay;
+};
 
 void blinker(void * parameters) {
+  int pin;
+  int delay;
+    BlinkParams* params = (BlinkParams*)parameters;
+    pin = params->pin;
+    delay = params->delay;
   for(;;) {
-    digitalWrite(LED,HIGH);
+    digitalWrite(pin,HIGH);
   vTaskDelay(50 / portTICK_PERIOD_MS);
-    digitalWrite(LED,LOW);  
+    digitalWrite(pin,LOW);  
     vTaskDelay(50 / portTICK_PERIOD_MS);
-    digitalWrite(LED,HIGH);  
+    digitalWrite(pin,HIGH);  
     vTaskDelay(50 / portTICK_PERIOD_MS);
-    digitalWrite(LED,LOW);
-  vTaskDelay(500 / portTICK_PERIOD_MS);
+    digitalWrite(pin,LOW);
+  vTaskDelay((500 + delay) / portTICK_PERIOD_MS);
   }
 }
 
+
+
 void setup() {
   // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+
   pinMode(LED, OUTPUT);
   digitalWrite(LED,LOW);
-  xTaskCreate(blinker,"blinker",2000,NULL,1,NULL);
+  pinMode(LED2, OUTPUT);
+  digitalWrite(LED2,LOW);
+  {
+  BlinkParams params = {LED, 0};
+  xTaskCreate(blinker,"blinker",2000,&params,1,NULL);
+  }
+  yield();
+  {
+  BlinkParams params = {LED2, 100};
+  xTaskCreate(blinker,"blinker2",2000,&params,1,NULL);
+  }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:(500/portTICK_PERION_MS);
- yield();
+ //yield();
 }
 
 // put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
+
