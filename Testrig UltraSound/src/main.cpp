@@ -24,7 +24,14 @@ void echoInterrupt() {
   } else {
     // The echo pin went from HIGH to LOW: stop timing and calculate distance
     long travelTime = micros() - startTime[i];
+    switch(i) {
+      case 0:
     globalVar_set(rawDistLeft,travelTime/29/2);
+    break;
+    case 1:
+    globalVar_set(rawDistRight,travelTime/29/2);
+    break;
+  }
     //distance[i] = travelTime / 29 / 2;
   }
 }
@@ -81,12 +88,16 @@ void setup() {
 void loop() {
   // Empty. All the work is done in tasks.
     // Print the distance for debugging
-    Serial.print("Sensor ");
-    Serial.print(0);
+    Serial.print("Left");
     Serial.print(": ");
     //Serial.print(distance[currentSensor]);
     Serial.print(globalVar_get(rawDistLeft));
+    Serial.print(" cm");
+    Serial.print("      Right");
+    Serial.print(": ");
+    //Serial.print(distance[currentSensor]);
+    Serial.print(globalVar_get(rawDistRight));
     Serial.println(" cm");
-    vTaskDelay(pdMS_TO_TICKS(350));
+    vTaskDelay(pdMS_TO_TICKS(150));
 }
 
