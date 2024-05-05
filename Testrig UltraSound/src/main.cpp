@@ -3,17 +3,17 @@
 
 
 #define NUM_SENSORS 2
-#define TRIGGER_PIN 32
-#define ECHO_PIN 33
-#define TRIGGER_PIN2 25
-#define ECHO_PIN2 26
+#define TRIGGER_PIN 25
+#define ECHO_PIN 26
+#define TRIGGER_PIN2 17
+#define ECHO_PIN2 35
 
 volatile long distance[NUM_SENSORS];
 volatile long startTime[NUM_SENSORS];
 volatile int currentSensor = 0;
 
-int triggerPins[NUM_SENSORS] = {32, 25};
-int echoPins[NUM_SENSORS] = {33, 26};
+int triggerPins[NUM_SENSORS] = {TRIGGER_PIN, TRIGGER_PIN2};
+int echoPins[NUM_SENSORS] = {ECHO_PIN, ECHO_PIN2};
 
 
 void echoInterrupt() {
@@ -55,7 +55,7 @@ void pollSensors(void *pvParameters) {
       digitalWrite(triggerPins[i], LOW);
 
       // Wait for 100 ms before polling the next sensor
-      vTaskDelay(pdMS_TO_TICKS(50));
+      vTaskDelay(pdMS_TO_TICKS(200));
     }
   }
 }
@@ -98,6 +98,6 @@ void loop() {
     //Serial.print(distance[currentSensor]);
     Serial.print(globalVar_get(rawDistRight));
     Serial.println(" cm");
-    vTaskDelay(pdMS_TO_TICKS(150));
+    vTaskDelay(pdMS_TO_TICKS(350));
 }
 
