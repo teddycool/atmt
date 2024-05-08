@@ -1,21 +1,26 @@
 <?php
+// http://192.168.2.2/post_log.php?chipid=123&msg="My log message"
 require_once('dbconfig.php');
 
 $chipid   = isset($_GET['chipid'])   ? $_GET['chipid']      : '';
-$log    = isset($_GET['log'])   ? $_GET['log']      : 'N/A';
+$msg    = isset($_GET['msg'])   ? $_GET['msg']      : 'N/A';
 
-$mysql = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_DATABASE);
-                $mysql->set_charset("utf8");
-		if (mysqli_connect_error()) {
-   			echo "Connect to database failed: ".mysqli_connect_error()."<br>";
-   			exit();
-		}
+if ($chipid == ''){
+	echo "Missing chipid<br>";
+	exit(); //No use to save this
+}
+
+$mysql = new mysqli("localhost", DB_USER, DB_PASSWORD, DB_DATABASE);
+
+if ($mysqli -> connect_errno) {
+	echo "Failed to connect to MySQL: " . $mysqli -> connect_error;
+	exit();
+  }
 
 $query = <<<EOD
-INSERT INTO Logging (chipid, time, msg)
-VALUES ('{$chipid}', '{$log}', Now())
+INSERT INTO Logging (chipid, msg, time)
+VALUES ('{$chipid}', '{$msg}', Now())
 EOD;
-
 
 $res = $mysql->query($query);
 $mysql->close();
