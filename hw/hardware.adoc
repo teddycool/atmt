@@ -44,5 +44,3 @@ Around 300 sek divided as:
 * L293 (mouser.se): 100
 * LP2989 (electrokit.se): 60
 * Pinheaders, smd-button, capacitors etc...
-
-

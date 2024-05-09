@@ -1,0 +1,16 @@
+# How to ota a natmt
+
+## Build the software
+Build the software and be sure to have the ota capabilities present since thes will be used the next time.
+
+Look at the template file. More info to come...
+
+
+Connect to the update api for the correct car from a web-browser. Each has its fixed ip. like http://192.168.2.3/update for car #1
+
+Select the bin-file built before, usually located in /.pio/build/??/firmware.bin
+
+The download process starts directly and the progress is visible. When completed the car resets and starts with the new software.
+
+Pretty awesome...
+

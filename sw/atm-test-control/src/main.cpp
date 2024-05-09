@@ -34,7 +34,6 @@
 #define ERIGHT 35
 
 AsyncWebServer server(80);
-WiFiClient wificlient; // Used for sending http to url
 
 String cpuid; // The unique hw id, actually arduino cpu-id
 
@@ -64,14 +63,34 @@ String uids()
   return uidds;
 }
 
-String postLogMsg(String message)
+String postlog(String msg)
 {
-  String ppost = "GET " + String(receivescripturl) + "?chipid=" + cpuid + "&msg=" + message +
-                 " HTTP/1.1\r\n" + "Host: " + String(postserver) + "\r\n" + "Connection: close\r\n\r\n";
-  Serial.println("Created measurement http request:");
-  Serial.println(ppost);
-  return ppost;
+  WiFiClient wificlient; // Used for sending http to url
+  HTTPClient http;
+
+  msg.replace(" ", "%20");
+
+  String url = "http://192.168.2.2/post_log.php?chipid=" + cpuid + "&msg=" + msg;
+  http.begin(wificlient, url);
+  int httpResponseCode = http.GET();
+  String payload = "{}";
+
+  if (httpResponseCode > 0)
+  {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    payload = http.getString();
+  }
+  else
+  {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  // Free resources
+  http.end();
+  return payload;
 }
+
 void setup()
 {
 
@@ -79,7 +98,6 @@ void setup()
   cpuid = uids(); // Read the unique boxid
   Serial.print("Hello from ");
   Serial.println(cpuid);
-  Serial.println("Running setup()");
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("");
@@ -91,20 +109,14 @@ void setup()
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
             { request->send(200, "text/plain", "Hi! I am ESP32 in car running on " + cpuid); });
 
   AsyncElegantOTA.begin(&server); // Start ElegantOTA
   server.begin();
-  Serial.println("HTTP server started");
-  Serial.println("----------");
-  Serial.println("ATMT started!");
+  postlog("OTA server started");
+  postlog("ATMT started!");
   frontdistance.SetUp();
   reardistance.SetUp();
   rightdistance.SetUp();
@@ -130,14 +142,17 @@ void loop()
   light.Test();
   Serial.println("Reading the distance sensors");
   Serial.println("FRONT : REAR : RIGHT : LEFT");
-  Serial.println(String(frontdistance.GetDistance()) + " : " + String(reardistance.GetDistance()) + " : " +
-                 String(rightdistance.GetDistance()) + " : " + String(leftdistance.GetDistance()));
+  float frontdist = frontdistance.GetDistance();
+  float reardist = reardistance.GetDistance();
+  float rightdist = rightdistance.GetDistance();
+  float leftdist = leftdistance.GetDistance();
 
-  Serial.println("Sending data to url..");
-  //wificlient.connect(postserver, 80);
-  //wificlient.print("Front-distance: " + String(frontdistance.GetDistance()));
+  postlog("Front distance: " + String(frontdist) + " cm");
+  postlog("Rear distance: " + String(reardist)+ " cm");
+  postlog("Right distance: " + String(rightdist)+ " cm");
+  postlog("Left distance: " + String(leftdist)+ " cm");
 
-  Serial.println("Reading the accelerometer values");
+  postlog("Reading the accelerometer values");
   Serial.println("ACCX  :   ACCY   :   ACCZ");
   Serial.println(String(dynamics.GetAccX()) + " : " + String(dynamics.GetAccY()) + " : " + String(dynamics.GetAccZ()));
   Serial.println("Reading the gyro values");
