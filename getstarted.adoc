@@ -19,7 +19,8 @@ Now, when the development environment is installed, clone the github repo.
 * Create a github-account if you don't allready have one
 * Go the the local directory for your projects and start a terminal
 * run "git clone https://github.com/teddycool/atmt.git"  to get all the files
-* You can now create a new local branch to work on and then use a pull-request to show and discuss the changes you made before merging to the main-branch. More info here: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
+* You can now create a new local branch to work on: git checkout -b my-new-branch
+* Then use a pull-request to show and discuss the changes you made before merging to the main-branch. More info here: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
 
 
 ## Open the test-project in VsCode
