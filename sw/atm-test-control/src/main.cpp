@@ -148,16 +148,22 @@ void loop()
   float leftdist = leftdistance.GetDistance();
 
   postlog("Front distance: " + String(frontdist) + " cm");
-  postlog("Rear distance: " + String(reardist)+ " cm");
-  postlog("Right distance: " + String(rightdist)+ " cm");
-  postlog("Left distance: " + String(leftdist)+ " cm");
+  postlog("Rear distance: " + String(reardist) + " cm");
+  postlog("Right distance: " + String(rightdist) + " cm");
+  postlog("Left distance: " + String(leftdist) + " cm");
 
-  postlog("Reading the accelerometer values");
-  Serial.println("ACCX  :   ACCY   :   ACCZ");
-  Serial.println(String(dynamics.GetAccX()) + " : " + String(dynamics.GetAccY()) + " : " + String(dynamics.GetAccZ()));
-  Serial.println("Reading the gyro values");
-  Serial.println("GyroX  :   GyroY   :   GyroZ");
-  Serial.println(String(dynamics.GetGyroX()) + " : " + String(dynamics.GetGyroY()) + " : " + String(dynamics.GetGyroZ()));
+  postlog("Accellerometer X: " + String(dynamics.GetAccX()));
+  postlog("Accellerometer Y: " + String(dynamics.GetAccY()));
+  postlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
+
+  postlog("Gyro X: " + String(dynamics.GetGyroX()));
+  postlog("Gyro Y: " + String(dynamics.GetGyroY()));
+  postlog("Gyro Z: " + String(dynamics.GetGyroZ()));
+
+  postlog("Compass X: " + String(dynamics.GetCompX()));
+  postlog("Compass Y: " + String(dynamics.GetCompY()));
+  postlog("Compass Z: " + String(dynamics.GetCompZ()));
+
   delay(1000);
   steering.Reverse();
   motor.Reverse();

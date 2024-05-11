@@ -1,4 +1,6 @@
 #include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_HMC5883_U.h>
 
 #ifndef MPU_H
 #define MPU_H 
@@ -17,6 +19,11 @@ private:
     float gyro_y;
     float gyro_z;
     float temp;
+    Adafruit_HMC5883_Unified mag;
+    float cmp_x;
+    float cmp_y;
+    float cmp_z;
+
 
 
 public:
@@ -29,6 +36,10 @@ public:
   float GetGyroX();
   float GetGyroY();
   float GetGyroZ();
+
+  float GetCompX();
+  float GetCompY();
+  float GetCompZ();
 
 };
 
