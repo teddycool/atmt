@@ -1,12 +1,29 @@
 #include <Arduino.h>
 #include "setget.h"
 #include <Wire.h>
+#include <driver/ledc.h>
 
-#define NUM_SENSORS 2
-#define TRIGGER_PIN 25
-#define ECHO_PIN 26
+// Ultrasound number and pins
+#define NUM_SENSORS 4
+#define TRIGGER_PIN 16
+#define ECHO_PIN 34
 #define TRIGGER_PIN2 17
 #define ECHO_PIN2 35
+#define TRIGGER_PIN3 26
+#define ECHO_PIN3 25
+#define TRIGGER_PIN4 19
+#define ECHO_PIN4 18
+
+//pins for motor driver L293
+//only using one motor as I am building this for servo steering
+const int enablePin = 2;
+const int input1Pin = 4;
+const int input2Pin = 5;
+// PWM settings
+const int freq = 5000; // Frequency for PWM signal
+const int resolution = 8; // Resolution for PWM signal
+const int channel1 = LEDC_CHANNEL_1; // Use channel 1 for forward direction
+const int channel2 = LEDC_CHANNEL_2; // Use channel 2 for backward direction
 
 #define COMPASS_ADDRESS 0x0d // I2C address for the compass
 // MPU-6050 I2C address is 0x68
@@ -16,12 +33,67 @@
 #define PWR_MGMT_1 0x6B
 #define PWR_MGMT_2 0x6C
 
+// Setting for the PWM signal to the servo
+#define LEDC_CHANNEL_0 0
+#define LEDC_TIMER_13_BIT 13
+#define LEDC_BASE_FREQ 50 // LEDC base frequency
+#define LEDC_GPIO 32      // The GPIO pin
+#define servo_adjust +150
+#define servo_neutral 1023 / 2 + servo_adjust
+#define servo_left servo_neutral - 70
+#define servo_right servo_neutral + 70
+
 volatile long distance[NUM_SENSORS];
 volatile long startTime[NUM_SENSORS];
 volatile int currentSensor = 0;
 
-int triggerPins[NUM_SENSORS] = {TRIGGER_PIN, TRIGGER_PIN2};
-int echoPins[NUM_SENSORS] = {ECHO_PIN, ECHO_PIN2};
+// Create vecors for the ultrasouns sensor pins
+int triggerPins[NUM_SENSORS] = {TRIGGER_PIN, TRIGGER_PIN2, TRIGGER_PIN3, TRIGGER_PIN4};
+int echoPins[NUM_SENSORS] = {ECHO_PIN, ECHO_PIN2, ECHO_PIN3, ECHO_PIN4};
+
+void PWM_setup()
+{
+  // Setup timer and attach timer to a led pin
+  ledcSetup(LEDC_CHANNEL_0, LEDC_BASE_FREQ, LEDC_TIMER_13_BIT);
+  ledcAttachPin(LEDC_GPIO, LEDC_CHANNEL_0);
+  ledcWrite(LEDC_CHANNEL_0, 600);
+}
+
+
+
+void PWM_setDutyCycle(uint32_t dutyCycle)
+{
+  // Set duty cycle
+  ledcWrite(LEDC_CHANNEL_0, dutyCycle);
+}
+
+void MOTOR_setup() {
+    // Set up the motor control pins as outputs
+  pinMode(enablePin, OUTPUT);
+  pinMode(input1Pin, OUTPUT);
+  pinMode(input2Pin, OUTPUT);
+
+}
+
+//-100 = full speed in reverese, 100 full speed ahead. 0 is stop.
+void MOTOR_set_speed (int speed) {
+
+
+if (speed > 0) {
+    // Forward direction
+    digitalWrite(enablePin, HIGH);
+    digitalWrite(input1Pin, HIGH);
+    digitalWrite(input2Pin, LOW);
+  } else if (speed < 0) {
+    // Backward direction
+    digitalWrite(enablePin, HIGH);
+       digitalWrite(input1Pin, LOW);
+    digitalWrite(input2Pin, HIGH);
+  } else {
+    // Stop the motor
+    digitalWrite(enablePin, LOW);
+  }
+}
 
 void echoInterrupt()
 {
@@ -38,10 +110,16 @@ void echoInterrupt()
     switch (i)
     {
     case 0:
-      globalVar_set(rawDistLeft, travelTime / 29 / 2);
+      globalVar_set(rawDistFront, travelTime / 29 / 2);
       break;
     case 1:
       globalVar_set(rawDistRight, travelTime / 29 / 2);
+      break;
+    case 2:
+      globalVar_set(rawDistLeft, travelTime / 29 / 2);
+      break;
+    case 3:
+      globalVar_set(rawDistBack, travelTime / 29 / 2);
       break;
     }
     // distance[i] = travelTime / 29 / 2;
@@ -82,7 +160,7 @@ void SERVICE_readCompass(void *pvParameters)
     Wire.beginTransmission(COMPASS_ADDRESS);
     Wire.write(0x03); // Request the data starting at register 0x03
     Wire.endTransmission();
-    Wire.requestFrom(COMPASS_ADDRESS, 6);
+    Wire.requestFrom((int)COMPASS_ADDRESS, 6, true);
     if (6 <= Wire.available())
     {
       x = Wire.read() << 8 | Wire.read();
@@ -111,7 +189,7 @@ void SERVICE_readAccelerometer(void *pvParameters)
     Wire.beginTransmission(MPU6050_ADDR);
     Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H)
     Wire.endTransmission(false);
-    Wire.requestFrom(MPU6050_ADDR, 14, true); // request a total of 14 registers
+    Wire.requestFrom((int)MPU6050_ADDR, 14, true); // request a total of 14 registers
 
     // read accelerometer and gyroscope data
     int16_t AcX = Wire.read() << 8 | Wire.read(); // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
@@ -135,7 +213,7 @@ void SERVICE_readAccelerometer(void *pvParameters)
 void setup()
 {
   // Initialize serial communication for debugging
-  Serial.begin(52600);
+  Serial.begin(57600);
   Wire.begin();
   Wire.setClock(100000);
   Wire.beginTransmission(COMPASS_ADDRESS);
@@ -146,6 +224,10 @@ void setup()
   Wire.write(PWR_MGMT_1);
   Wire.write(0);
   Wire.endTransmission(true);
+
+  PWM_setup();
+  MOTOR_setup();
+  MOTOR_set_speed(0);
 
   globalVar_init();
   // Initialize trigger and echo pins
@@ -197,6 +279,14 @@ void loop()
   Serial.print("      Right: ");
   // Serial.print(distance[currentSensor]);
   Serial.print(globalVar_get(rawDistRight));
+  Serial.print(" cm");
+    Serial.print("    Front: ");
+  // Serial.print(distance[currentSensor]);
+  Serial.print(globalVar_get(rawDistFront));
+  Serial.print(" cm");
+  Serial.print("      Back: ");
+  // Serial.print(distance[currentSensor]);
+  Serial.print(globalVar_get(rawDistBack));
   Serial.println(" cm");
   Serial.print("X:");
   Serial.print(globalVar_get(rawMagX));
@@ -219,5 +309,7 @@ void loop()
   Serial.print("   GZ:");
   Serial.println(globalVar_get(rawGyZ));
   Serial.println();
-  vTaskDelay(pdMS_TO_TICKS(900));
+  PWM_setDutyCycle(random(servo_left, servo_right));
+  MOTOR_set_speed(random(-100,100));
+  vTaskDelay(pdMS_TO_TICKS(2100));
 }
