@@ -23,6 +23,7 @@ typedef enum {
     rawGyX,
     rawGyY,
     rawGyZ,
+    calcHeading,
     NUM_VARS
 } VarNames;
 
