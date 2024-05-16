@@ -23,6 +23,13 @@ for(int i = 0; i < NUM_LEDS; i++) {
     FastLED.show();
 }
 
+void Light::HeadLight(){
+    leds[2] = CRGB::White;
+    leds[3] = CRGB::White; 
+    FastLED.show();
+}
+
+
 
 void Light::Test(){
 for(int i = 0; i < NUM_LEDS; i++) {

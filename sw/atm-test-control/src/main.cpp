@@ -8,6 +8,7 @@
 #include <PubSubClient.h>
 
 #include "motor.h"
+#include "drive.h"
 #include "usensor.h"
 #include "light.h"
 #include "dynamics.h"
@@ -45,8 +46,10 @@ Usensor rightdistance(TRIGHT, ERIGHT);
 Usensor frontdistance(TFRONT, EFRONT);
 Usensor reardistance(TREAR, EREAR);
 Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
+Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
 Light light;
+float frontDist = 100;
 
 int loopcount = 0;
 // Function for reading uniuque chipid, to keep track of logs
@@ -108,8 +111,26 @@ void setup()
   cpuid = uids(); // Read the unique boxid
   Serial.print("Hello from ");
   Serial.println(cpuid);
+
+  IPAddress local_IP(192, 168, 2, 104);
+
+  if (cpuid == "64b7084cff5c")
+  {
+    IPAddress local_IP(192, 168, 2, 103);
+  }
+
+  IPAddress gateway(192, 168, 2, 1);
+  IPAddress subnet(255, 255, 0, 0);
+  IPAddress primaryDNS(8, 8, 8, 8);
+  IPAddress secondaryDNS(8, 8, 4, 4); // optional
   WiFi.mode(WIFI_STA);
+
+  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS))
+  {
+    Serial.println("STA Failed to configure");
+  }
   WiFi.begin(ssid, password);
+
   Serial.println("");
 
   // Wait for connection
@@ -127,6 +148,7 @@ void setup()
   server.begin();
   postlog("OTA server started");
   postlog("ATMT started!");
+  postlog("Mac: " + String(WiFi.macAddress()));
   frontdistance.SetUp();
   reardistance.SetUp();
   rightdistance.SetUp();
@@ -139,63 +161,31 @@ void setup()
   Serial.println("Setup is done!");
 }
 
+void driveStrategy(){
+  drive.Forward(1);
+  delay(1000);
+  drive.Stop();
+  delay(1000);
+  drive.Reverse(1);
+  delay(1000);
+  drive.Stop();
+  light.Test();
+  delay(5000);
+}
+
+void strategy() {
+ frontDist = frontdistance.GetDistance(); //cm
+ if (frontDist < 20) {
+    light.Off();
+    drive.Reverse(1);
+    light.Test();
+ } else {
+    drive.Stop();
+ }
+}
+
 void loop()
 {
-  loopcount++;
-  Serial.println();
-  Serial.println("still looping... count: " + String(loopcount));
-  steering.Start();
-  dynamics.Update();
-  motor.Start();
-  steering.Start();
-  Serial.println("Testing light");
-  light.Test();
-  Serial.println("Reading the distance sensors");
-  Serial.println("FRONT : REAR : RIGHT : LEFT");
-  float frontdist = frontdistance.GetDistance();
-  float reardist = reardistance.GetDistance();
-  float rightdist = rightdistance.GetDistance();
-  float leftdist = leftdistance.GetDistance();
-
-  postlog("Front distance: " + String(frontdist) + " cm");
-  postlog("Rear distance: " + String(reardist) + " cm");
-  postlog("Right distance: " + String(rightdist) + " cm");
-  postlog("Left distance: " + String(leftdist) + " cm");
-
-  postlog("Accellerometer X: " + String(dynamics.GetAccX()));
-  postlog("Accellerometer Y: " + String(dynamics.GetAccY()));
-  postlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
-
-  postlog("Gyro X: " + String(dynamics.GetGyroX()));
-  postlog("Gyro Y: " + String(dynamics.GetGyroY()));
-  postlog("Gyro Z: " + String(dynamics.GetGyroZ()));
-
-  postlog("Compass X: " + String(dynamics.GetCompX()));
-  postlog("Compass Y: " + String(dynamics.GetCompY()));
-  postlog("Compass Z: " + String(dynamics.GetCompZ()));
-
-  mqttlog("Front distance: " + String(frontdist) + " cm");
-  mqttlog("Rear distance: " + String(reardist) + " cm");
-  mqttlog("Right distance: " + String(rightdist) + " cm");
-  mqttlog("Left distance: " + String(leftdist) + " cm");
-
-  mqttlog("Accellerometer X: " + String(dynamics.GetAccX()));
-  mqttlog("Accellerometer Y: " + String(dynamics.GetAccY()));
-  mqttlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
-
-  mqttlog("Gyro X: " + String(dynamics.GetGyroX()));
-  mqttlog("Gyro Y: " + String(dynamics.GetGyroY()));
-  mqttlog("Gyro Z: " + String(dynamics.GetGyroZ()));
-
-  mqttlog("Compass X: " + String(dynamics.GetCompX()));
-  mqttlog("Compass Y: " + String(dynamics.GetCompY()));
-  mqttlog("Compass Z: " + String(dynamics.GetCompZ()));
-
- 
-  delay(1000);
-  steering.Reverse();
-  motor.Reverse();
-  light.Off();
-  Serial.println("---------------------------------------------");
-  delay(1500);
+  strategy();
+  delay(100);
 }
