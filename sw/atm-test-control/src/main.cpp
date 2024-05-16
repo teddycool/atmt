@@ -5,6 +5,7 @@
 #include <AsyncElegantOTA.h>
 #include <HTTPClient.h>
 #include <ArduinoUniqueID.h>
+#include <PubSubClient.h>
 
 #include "motor.h"
 #include "usensor.h"
@@ -61,6 +62,15 @@ String uids()
     uidds = uidds + String(UniqueID[i], HEX);
   }
   return uidds;
+}
+
+void mqttlog(String msg){
+  WiFiClient wificlient;
+  PubSubClient mqttClient(wificlient);
+  mqttClient.setServer("192.168.2.2", 1883);
+  mqttClient.connect(cpuid.c_str());
+  String topic = cpuid + "/logging";
+  mqttClient.publish(topic.c_str(),msg.c_str());
 }
 
 String postlog(String msg)
@@ -164,6 +174,24 @@ void loop()
   postlog("Compass Y: " + String(dynamics.GetCompY()));
   postlog("Compass Z: " + String(dynamics.GetCompZ()));
 
+  mqttlog("Front distance: " + String(frontdist) + " cm");
+  mqttlog("Rear distance: " + String(reardist) + " cm");
+  mqttlog("Right distance: " + String(rightdist) + " cm");
+  mqttlog("Left distance: " + String(leftdist) + " cm");
+
+  mqttlog("Accellerometer X: " + String(dynamics.GetAccX()));
+  mqttlog("Accellerometer Y: " + String(dynamics.GetAccY()));
+  mqttlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
+
+  mqttlog("Gyro X: " + String(dynamics.GetGyroX()));
+  mqttlog("Gyro Y: " + String(dynamics.GetGyroY()));
+  mqttlog("Gyro Z: " + String(dynamics.GetGyroZ()));
+
+  mqttlog("Compass X: " + String(dynamics.GetCompX()));
+  mqttlog("Compass Y: " + String(dynamics.GetCompY()));
+  mqttlog("Compass Z: " + String(dynamics.GetCompZ()));
+
+ 
   delay(1000);
   steering.Reverse();
   motor.Reverse();
