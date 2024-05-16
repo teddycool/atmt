@@ -5,6 +5,7 @@
 #include <AsyncElegantOTA.h>
 #include <HTTPClient.h>
 #include <ArduinoUniqueID.h>
+#include <PubSubClient.h>
 
 #include "motor.h"
 #include "drive.h"
@@ -64,6 +65,15 @@ String uids()
     uidds = uidds + String(UniqueID[i], HEX);
   }
   return uidds;
+}
+
+void mqttlog(String msg){
+  WiFiClient wificlient;
+  PubSubClient mqttClient(wificlient);
+  mqttClient.setServer("192.168.2.2", 1883);
+  mqttClient.connect(cpuid.c_str());
+  String topic = cpuid + "/logging";
+  mqttClient.publish(topic.c_str(),msg.c_str());
 }
 
 String postlog(String msg)
