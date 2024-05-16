@@ -49,7 +49,7 @@ Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
 Light light;
 float frontDist = 100;
-
+float rearDist = 100;
 int loopcount = 0;
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
@@ -168,12 +168,15 @@ bool somethingAhead() {
 }
 
 bool somethingBehind() {
- return frontDist > 5 && frontDist < 20;
+ return rearDist > 5 && rearDist < 20;
 }
 
 void strategy() {
  if(somethingAhead()){
   drive.Reverse(1);
+  light.Test();
+ } else if (somethingBehind) { 
+  drive.Forward(1);
   light.Test();
  } else {
   drive.Stop();
