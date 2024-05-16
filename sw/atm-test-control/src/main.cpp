@@ -6,6 +6,7 @@
 #include <HTTPClient.h>
 #include <ArduinoUniqueID.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include <vector>
 
 #include "motor.h"
@@ -83,35 +84,46 @@ void mqttlog(String msg,String logType="logging"){
   mqttClient.connect(cpuid.c_str());
 
   String topic = cpuid +"/" + logType;
+  Serial.println("mqtt cpuid: "+ cpuid);
+  Serial.println("mqtt topic: "+ topic);
+  Serial.println("mqtt msg: "+msg);
   mqttClient.publish(topic.c_str(),msg.c_str());
 }
 
 void mqttmeasurements(){
   String topic = "measurements";
-
   mqttlog(topic,topic);
 
-  String json = "{Sensors:";
-  json += "Distance_Front:" + String(frontdistance.GetDistance()) + ",";
-  json += "Distance_Rear:" + String(reardistance.GetDistance()) + ",";
-  json += "Distance_Right:" + String(rightdistance.GetDistance()) + ",";
-  json += "Distance_Left:" + String(leftdistance.GetDistance()) + ",";
+  // Create the JSON document
+  DynamicJsonDocument doc(1024);
+  doc["Distance_Front"] = frontdistance.GetDistance();
+  doc["Distance_Rear"] = reardistance.GetDistance();
+  doc["Distance_Right"] = rightdistance.GetDistance();
+  doc["Distance_Left"] = leftdistance.GetDistance();
 
-  json += "Accellerometer_X:" + String(dynamics.GetAccX()) + "," ;
-  json += "Accellerometer_Y:" + String(dynamics.GetAccY()) + "," ;
-  json += "Accellerometer_Z:" + String(dynamics.GetAccZ()) + "," ;
+  doc["Accel_X"] = dynamics.GetAccX();
+  doc["Accel_Y"] = dynamics.GetAccY();
+  doc["Accel_Z"] = dynamics.GetAccZ();
 
-  json += "Gyro_X:" + String(dynamics.GetGyroX()) + "," ;
-  json += "Gyro_Y:" + String(dynamics.GetGyroY()) + "," ;
-  json += "Gyro_Z:" + String(dynamics.GetGyroZ()) + "," ;
+  doc["Gyro_X"] = dynamics.GetGyroX();
+  doc["Gyro_Y"] = dynamics.GetGyroY();
+  doc["Gyro_Z"] = dynamics.GetGyroZ();
 
-  json += "Compass_X:" + String(dynamics.GetCompX()) + "," ;
-  json += "Compass_Y:" + String(dynamics.GetCompY()) + "," ;
-  json += "Compass_Z:" + String(dynamics.GetCompZ())  ;
+  doc["Compass_X"] = dynamics.GetCompX();
+  doc["Compass_Y"] = dynamics.GetCompY();
+  doc["Compass_Z"] = dynamics.GetCompZ();
+  /*
+     JsonArray data = doc.createNestedArray("data");
+     data.add(48.756080);
+     data.add(2.302038);
+     */
 
-  json += "}";
+  // Serialize JSON to string
+  char payload[300];
+  serializeJson(doc, payload, sizeof(payload));
 
-  mqttlog(json,topic);
+  Serial.println("payload: "+String(payload));
+  mqttlog(payload,topic);
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -126,8 +138,10 @@ void mqttListen(){
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
-  mqttClient.subscribe("#/remote/");
+  String topic = cpuid + "/" + "remote";
+  mqttClient.subscribe(topic.c_str());
   mqttClient.setCallback(callback);
+
 }
 
 
@@ -316,11 +330,21 @@ void masterStrat() {
 
 void loop()
 {
+  /*
   idx = loopcount % 3;
   updateDistSensors();
   if(idx == 0){
     masterStrat();
   }
-  delay(100);
+  */
+  mqttmeasurements();
+
+  drive.Stop();
+  mqttlog("Drive Stop");
+
+  delay(1000);
   loopcount++;
+  if(loopcount < 2){
+    (loopcount%2)?drive.Forward(1):drive.Reverse(1);
+  }
 }
