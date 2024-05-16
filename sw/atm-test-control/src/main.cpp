@@ -9,6 +9,7 @@
 
 #include "motor.h"
 #include "drive.h"
+#include "steer.h"
 #include "usensor.h"
 #include "light.h"
 #include "dynamics.h"
@@ -48,6 +49,7 @@ Usensor reardistance(TREAR, EREAR);
 Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
 Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
+Steer steer(steering);
 Light light;
 float frontDist = 100;
 float rearDist = 100;
@@ -104,6 +106,15 @@ String postlog(String msg)
   http.end();
   return payload;
 }
+
+// void steerRight(){
+//   steering.Reverse();
+
+// }
+// void steerLeft(){
+
+//   steering.Start();
+// }
 
 void setup()
 {
@@ -170,14 +181,13 @@ void setup()
 void driveStrategy()
 {
   drive.Forward(1);
-  delay(1000);
-  drive.Stop();
-  delay(1000);
-  drive.Reverse(1);
-  delay(1000);
-  drive.Stop();
-  light.Test();
   delay(5000);
+  steer.Right();
+  delay(5000);
+  drive.Stop();
+  delay(1000);
+  light.Test();
+  
 }
 
 bool somethingAhead()
@@ -189,6 +199,7 @@ bool somethingBehind()
 {
   return rearDist > 5 && rearDist < 20;
 }
+
 
 void strategy()
 {
@@ -214,5 +225,5 @@ void loop()
   frontDist = frontdistance.GetDistance(); // update fron dist
   rearDist = reardistance.GetDistance();   // update fron dist
   strategy();
-  delay(100);
+
 }
