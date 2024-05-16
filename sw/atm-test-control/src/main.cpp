@@ -7,13 +7,14 @@
 #include <ArduinoUniqueID.h>
 
 #include "motor.h"
+#include "drive.h"
 #include "usensor.h"
 #include "light.h"
 #include "dynamics.h"
 #include "secrets.h"
 
 // Define pin-name and GPIO#. Pin # are fixed but can ofcourse be named differently
-// Motor test
+// Motor
 #define M1E_PIN 2
 #define M1F_PIN 4
 #define M1R_PIN 5
@@ -44,6 +45,7 @@ Usensor rightdistance(TRIGHT, ERIGHT);
 Usensor frontdistance(TFRONT, EFRONT);
 Usensor reardistance(TREAR, EREAR);
 Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
+Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
 Light light;
 
@@ -129,45 +131,18 @@ void setup()
   Serial.println("Setup is done!");
 }
 
+void strategy(){
+  drive.Forward(1);
+  delay(1000);
+  drive.Stop();
+  delay(1000);
+  drive.Reverse(1);
+  delay(1000);
+  drive.Stop();
+}
+
 void loop()
 {
-  loopcount++;
-  Serial.println();
-  Serial.println("still looping... count: " + String(loopcount));
-  steering.Start();
-  dynamics.Update();
-  motor.Start();
-  steering.Start();
-  Serial.println("Testing light");
-  light.Test();
-  Serial.println("Reading the distance sensors");
-  Serial.println("FRONT : REAR : RIGHT : LEFT");
-  float frontdist = frontdistance.GetDistance();
-  float reardist = reardistance.GetDistance();
-  float rightdist = rightdistance.GetDistance();
-  float leftdist = leftdistance.GetDistance();
-
-  postlog("Front distance: " + String(frontdist) + " cm");
-  postlog("Rear distance: " + String(reardist) + " cm");
-  postlog("Right distance: " + String(rightdist) + " cm");
-  postlog("Left distance: " + String(leftdist) + " cm");
-
-  postlog("Accellerometer X: " + String(dynamics.GetAccX()));
-  postlog("Accellerometer Y: " + String(dynamics.GetAccY()));
-  postlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
-
-  postlog("Gyro X: " + String(dynamics.GetGyroX()));
-  postlog("Gyro Y: " + String(dynamics.GetGyroY()));
-  postlog("Gyro Z: " + String(dynamics.GetGyroZ()));
-
-  postlog("Compass X: " + String(dynamics.GetCompX()));
-  postlog("Compass Y: " + String(dynamics.GetCompY()));
-  postlog("Compass Z: " + String(dynamics.GetCompZ()));
-
-  delay(1000);
-  steering.Reverse();
-  motor.Reverse();
-  light.Off();
-  Serial.println("---------------------------------------------");
-  delay(1500);
+  strategy();
+  delay(5000);
 }
