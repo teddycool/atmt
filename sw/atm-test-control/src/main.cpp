@@ -6,6 +6,7 @@
 #include <HTTPClient.h>
 #include <ArduinoUniqueID.h>
 #include <PubSubClient.h>
+#include <vector>
 
 #include "motor.h"
 #include "drive.h"
@@ -49,9 +50,13 @@ Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
 Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
 Light light;
-float frontDist = 100;
-float rearDist = 100;
+std::vector<float> frontDist(3, 100);
+std::vector<float> rearDist(3, 100);
+std::vector<float> leftDist(3, 100);
+std::vector<float> rightDist(3, 100);
+
 int loopcount = 0;
+int idx = 0;
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -173,31 +178,59 @@ void driveStrategy(){
   delay(5000);
 }
 
-bool somethingAhead() {
- return frontDist > 5 && frontDist < 20;
+float GetCleanDist(std::vector<float> &vec){
+  float res = 0.0;
+  for (int i = 0; i < 3; i++)
+  {
+    res += vec.at(i);
+  }
+  return res / 3;
+  
 }
 
-bool somethingBehind() {
- return rearDist > 5 && rearDist < 20;
+bool objectInRange(std::vector<float> &vec) {
+  float dist = GetCleanDist(vec);
+  return dist > 5 && dist < 20;
 }
+
+
+void updateDistSensors(){
+  float fD = frontdistance.GetDistance();
+  float reD = reardistance.GetDistance();
+  float riD = rightdistance.GetDistance();
+  float lD = leftdistance.GetDistance();
+  frontDist[idx] = fD > 100.0 ? 100 : fD;
+  rearDist[idx] = reD > 100.0 ? 100 : reD;
+  rightDist[idx] = riD > 100.0 ? 100 : riD;
+  leftDist[idx] = lD > 100.0 ? 100 : lD;
+}
+
+
 
 void strategy() {
- if(somethingAhead()){
+
+ if (objectInRange(frontDist)){
   drive.Reverse(1);
-  light.Test();
- } else if (somethingBehind) { 
+ } else if (objectInRange(rearDist)) { 
   drive.Forward(1);
-  light.Test();
- } else {
+ } else if (objectInRange(leftDist)) { 
+  steering.Start();
+ }
+else if (objectInRange(rightDist)) { 
+  steering.Reverse();
+}
+ else {
   drive.Stop();
-  light.Off();
  }
 }
 
 void loop()
 {
-  frontDist = frontdistance.GetDistance(); // update fron dist
-  rearDist = reardistance.GetDistance(); // update fron dist
-  strategy();
+  idx = loopcount % 3;
+  updateDistSensors();
+  if(idx == 0){
+    strategy();
+  }
   delay(100);
+  loopcount++;
 }
