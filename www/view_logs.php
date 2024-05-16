@@ -15,7 +15,7 @@ if ($conn->connect_error) {
 	die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT DISTINCT chipid FROM Logging;";
+$sql = "SELECT DISTINCT chipid FROM Logging ORDER BY id DESC;";
 
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
