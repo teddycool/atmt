@@ -74,14 +74,87 @@ String uids()
   return uidds;
 }
 
-void mqttlog(String msg)
-{
+
+void mqttlog(String msg,String logType="logging"){
+
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
-  String topic = cpuid + "/logging";
-  mqttClient.publish(topic.c_str(), msg.c_str());
+
+  String topic = cpuid +"/" + logType;
+  mqttClient.publish(topic.c_str(),msg.c_str());
+}
+
+void mqttmeasurements(){
+  String topic = "measurements";
+
+  mqttlog(topic,topic);
+
+  String json = "{Sensors:";
+  json += "Distance_Front:" + String(frontdistance.GetDistance()) + ",";
+  json += "Distance_Rear:" + String(reardistance.GetDistance()) + ",";
+  json += "Distance_Right:" + String(rightdistance.GetDistance()) + ",";
+  json += "Distance_Left:" + String(leftdistance.GetDistance()) + ",";
+
+  json += "Accellerometer_X:" + String(dynamics.GetAccX()) + "," ;
+  json += "Accellerometer_Y:" + String(dynamics.GetAccY()) + "," ;
+  json += "Accellerometer_Z:" + String(dynamics.GetAccZ()) + "," ;
+
+  json += "Gyro_X:" + String(dynamics.GetGyroX()) + "," ;
+  json += "Gyro_Y:" + String(dynamics.GetGyroY()) + "," ;
+  json += "Gyro_Z:" + String(dynamics.GetGyroZ()) + "," ;
+
+  json += "Compass_X:" + String(dynamics.GetCompX()) + "," ;
+  json += "Compass_Y:" + String(dynamics.GetCompY()) + "," ;
+  json += "Compass_Z:" + String(dynamics.GetCompZ())  ;
+
+  json += "}";
+
+  mqttlog(json,topic);
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+ 
+  String msg = "Received: ";
+  mqttlog(msg,"remote_echo");
+  // Handle incoming message
+}
+
+void mqttListen(){
+  WiFiClient wificlient;
+  PubSubClient mqttClient(wificlient);
+  mqttClient.setServer("192.168.2.2", 1883);
+  mqttClient.connect(cpuid.c_str());
+  mqttClient.subscribe("#/remote/");
+  mqttClient.setCallback(callback);
+}
+
+
+
+void postvalue(String name, float value, String unit){
+WiFiClient wificlient; // Used for sending http to url
+  HTTPClient http;
+
+  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name
+    + "&value=" + String(value) + "&unit=" + unit;
+  http.begin(wificlient, url);
+  int httpResponseCode = http.GET();
+  String payload = "{}";
+
+  if (httpResponseCode > 0)
+  {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    payload = http.getString();
+  }
+  else
+  {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  // Free resources
+  http.end();
 }
 
 String postlog(String msg)
@@ -219,20 +292,26 @@ void updateDistSensors(){
 
 
 void strategy() {
+  if(objectInRange(frontDist) && objectInRange(rearDist)){
+    drive.Stop();
+    light.Test();
+  }
+  else if (objectInRange(frontDist)){
+    drive.Reverse(1);
+    light.Off();
 
- if (objectInRange(frontDist)){
-  drive.Reverse(1);
- } else if (objectInRange(rearDist)) { 
-  drive.Forward(1);
- } else if (objectInRange(leftDist)) { 
-  steer.Right();
- }
-else if (objectInRange(rightDist)) { 
-  steer.Left();
-}
- else {
-  drive.Stop();
- }
+  } else { 
+    drive.Forward(1);
+    light.Off();
+  }
+
+  if (objectInRange(leftDist)) { 
+    steer.Right();
+  } else if (objectInRange(rightDist)) { 
+    steer.Left();
+  }else{
+    steer.Stop();
+  }
 }
 
 void loop()
