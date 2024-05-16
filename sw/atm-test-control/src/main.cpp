@@ -48,6 +48,7 @@ Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
 Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
 Light light;
+float frontDist = 100;
 
 int loopcount = 0;
 // Function for reading uniuque chipid, to keep track of logs
@@ -131,7 +132,7 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-void strategy(){
+void driveStrategy(){
   drive.Forward(1);
   delay(1000);
   drive.Stop();
@@ -141,13 +142,21 @@ void strategy(){
   drive.Stop();
   light.Test();
   delay(5000);
-  light.Off();
-  
+}
 
+void strategy() {
+ frontDist = frontdistance.GetDistance(); //cm
+ if (frontDist > 20) {
+    light.Off();
+    drive.Forward(1);
+ } else {
+    drive.Stop();
+    light.Test();
+ }
 }
 
 void loop()
 {
   strategy();
-  delay(5000);
+  delay(100);
 }
