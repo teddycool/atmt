@@ -32,4 +32,3 @@ void Motor::Stop(){
   digitalWrite(MF, LOW);
   digitalWrite(MB, LOW);
 }
-
