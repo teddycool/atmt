@@ -16,6 +16,7 @@
   <a href=view_logs.php>To view the logs click here</a>
 </div>
 <div>
-  <a href=http://192.168.2.3/update>To OTA</a>
+  <a href=http://192.168.2.3/update>To OTA 192.168.2.3</a>
+  <a href=http://192.168.2.4/update>To OTA 192.168.2.4</a>
 </div>
 </body>
