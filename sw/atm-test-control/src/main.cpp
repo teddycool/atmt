@@ -98,8 +98,26 @@ void setup()
   cpuid = uids(); // Read the unique boxid
   Serial.print("Hello from ");
   Serial.println(cpuid);
+
+  IPAddress local_IP(192, 168, 2, 104);
+
+  if (cpuid == "64b7084cff5c")
+  {
+    IPAddress local_IP(192, 168, 2, 103);
+  }
+
+  IPAddress gateway(192, 168, 2, 1);
+  IPAddress subnet(255, 255, 0, 0);
+  IPAddress primaryDNS(8, 8, 8, 8);
+  IPAddress secondaryDNS(8, 8, 4, 4); // optional
   WiFi.mode(WIFI_STA);
+
+  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS))
+  {
+    Serial.println("STA Failed to configure");
+  }
   WiFi.begin(ssid, password);
+
   Serial.println("");
 
   // Wait for connection
@@ -117,6 +135,7 @@ void setup()
   server.begin();
   postlog("OTA server started");
   postlog("ATMT started!");
+  postlog("Mac: " + String(WiFi.macAddress()));
   frontdistance.SetUp();
   reardistance.SetUp();
   rightdistance.SetUp();
@@ -136,10 +155,10 @@ void loop()
   Serial.println("still looping... count: " + String(loopcount));
   steering.Start();
   dynamics.Update();
-  motor.Start();
+  //  motor.Start();
   steering.Start();
   Serial.println("Testing light");
-  light.Test();
+  light.HeadLight();
   Serial.println("Reading the distance sensors");
   Serial.println("FRONT : REAR : RIGHT : LEFT");
   float frontdist = frontdistance.GetDistance();
@@ -147,26 +166,26 @@ void loop()
   float rightdist = rightdistance.GetDistance();
   float leftdist = leftdistance.GetDistance();
 
-  postlog("Front distance: " + String(frontdist) + " cm");
-  postlog("Rear distance: " + String(reardist) + " cm");
-  postlog("Right distance: " + String(rightdist) + " cm");
-  postlog("Left distance: " + String(leftdist) + " cm");
+  // postlog("Front distance: " + String(frontdist) + " cm");
+  // postlog("Rear distance: " + String(reardist) + " cm");
+  // postlog("Right distance: " + String(rightdist) + " cm");
+  // postlog("Left distance: " + String(leftdist) + " cm");
 
-  postlog("Accellerometer X: " + String(dynamics.GetAccX()));
-  postlog("Accellerometer Y: " + String(dynamics.GetAccY()));
-  postlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
+  // postlog("Accellerometer X: " + String(dynamics.GetAccX()));
+  // postlog("Accellerometer Y: " + String(dynamics.GetAccY()));
+  // postlog("Accellerometer Z: " + String(dynamics.GetAccZ()));
 
-  postlog("Gyro X: " + String(dynamics.GetGyroX()));
-  postlog("Gyro Y: " + String(dynamics.GetGyroY()));
-  postlog("Gyro Z: " + String(dynamics.GetGyroZ()));
+  // postlog("Gyro X: " + String(dynamics.GetGyroX()));
+  // postlog("Gyro Y: " + String(dynamics.GetGyroY()));
+  // postlog("Gyro Z: " + String(dynamics.GetGyroZ()));
 
-  postlog("Compass X: " + String(dynamics.GetCompX()));
-  postlog("Compass Y: " + String(dynamics.GetCompY()));
-  postlog("Compass Z: " + String(dynamics.GetCompZ()));
+  // postlog("Compass X: " + String(dynamics.GetCompX()));
+  // postlog("Compass Y: " + String(dynamics.GetCompY()));
+  // postlog("Compass Z: " + String(dynamics.GetCompZ()));
 
   delay(1000);
   steering.Reverse();
-  motor.Reverse();
+  // motor.Reverse();
   light.Off();
   Serial.println("---------------------------------------------");
   delay(1500);
