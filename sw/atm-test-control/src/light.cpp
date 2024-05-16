@@ -29,6 +29,11 @@ void Light::HeadLight(){
     FastLED.show();
 }
 
+void Light::BrakeLight(){
+    leds[0] = CRGB::Red;
+    leds[1] = CRGB::Red; 
+    FastLED.show();
+}
 
 
 void Light::Test(){

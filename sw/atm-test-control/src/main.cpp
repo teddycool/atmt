@@ -74,22 +74,23 @@ String uids()
   return uidds;
 }
 
-
-void mqttlog(String msg,String logType="logging"){
+void mqttlog(String msg, String logType = "logging")
+{
 
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
 
-  String topic = cpuid +"/" + logType;
-  mqttClient.publish(topic.c_str(),msg.c_str());
+  String topic = cpuid + "/" + logType;
+  mqttClient.publish(topic.c_str(), msg.c_str());
 }
 
-void mqttmeasurements(){
+void mqttmeasurements()
+{
   String topic = "measurements";
 
-  mqttlog(topic,topic);
+  mqttlog(topic, topic);
 
   String json = "{Sensors:";
   json += "Distance_Front:" + String(frontdistance.GetDistance()) + ",";
@@ -97,31 +98,33 @@ void mqttmeasurements(){
   json += "Distance_Right:" + String(rightdistance.GetDistance()) + ",";
   json += "Distance_Left:" + String(leftdistance.GetDistance()) + ",";
 
-  json += "Accellerometer_X:" + String(dynamics.GetAccX()) + "," ;
-  json += "Accellerometer_Y:" + String(dynamics.GetAccY()) + "," ;
-  json += "Accellerometer_Z:" + String(dynamics.GetAccZ()) + "," ;
+  json += "Accellerometer_X:" + String(dynamics.GetAccX()) + ",";
+  json += "Accellerometer_Y:" + String(dynamics.GetAccY()) + ",";
+  json += "Accellerometer_Z:" + String(dynamics.GetAccZ()) + ",";
 
-  json += "Gyro_X:" + String(dynamics.GetGyroX()) + "," ;
-  json += "Gyro_Y:" + String(dynamics.GetGyroY()) + "," ;
-  json += "Gyro_Z:" + String(dynamics.GetGyroZ()) + "," ;
+  json += "Gyro_X:" + String(dynamics.GetGyroX()) + ",";
+  json += "Gyro_Y:" + String(dynamics.GetGyroY()) + ",";
+  json += "Gyro_Z:" + String(dynamics.GetGyroZ()) + ",";
 
-  json += "Compass_X:" + String(dynamics.GetCompX()) + "," ;
-  json += "Compass_Y:" + String(dynamics.GetCompY()) + "," ;
-  json += "Compass_Z:" + String(dynamics.GetCompZ())  ;
+  json += "Compass_X:" + String(dynamics.GetCompX()) + ",";
+  json += "Compass_Y:" + String(dynamics.GetCompY()) + ",";
+  json += "Compass_Z:" + String(dynamics.GetCompZ());
 
   json += "}";
 
-  mqttlog(json,topic);
+  mqttlog(json, topic);
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
- 
+void callback(char *topic, byte *payload, unsigned int length)
+{
+
   String msg = "Received: ";
-  mqttlog(msg,"remote_echo");
+  mqttlog(msg, "remote_echo");
   // Handle incoming message
 }
 
-void mqttListen(){
+void mqttListen()
+{
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
@@ -130,14 +133,12 @@ void mqttListen(){
   mqttClient.setCallback(callback);
 }
 
-
-
-void postvalue(String name, float value, String unit){
-WiFiClient wificlient; // Used for sending http to url
+void postvalue(String name, float value, String unit)
+{
+  WiFiClient wificlient; // Used for sending http to url
   HTTPClient http;
 
-  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name
-    + "&value=" + String(value) + "&unit=" + unit;
+  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name + "&value=" + String(value) + "&unit=" + unit;
   http.begin(wificlient, url);
   int httpResponseCode = http.GET();
   String payload = "{}";
@@ -185,15 +186,6 @@ String postlog(String msg)
   return payload;
 }
 
-// void steerRight(){
-//   steering.Reverse();
-
-// }
-// void steerLeft(){
-
-//   steering.Start();
-// }
-
 void setup()
 {
 
@@ -202,34 +194,26 @@ void setup()
   Serial.print("Hello from ");
   Serial.println(cpuid);
 
-  
   IPAddress gateway(192, 168, 2, 1);
   IPAddress subnet(255, 255, 0, 0);
   IPAddress primaryDNS(8, 8, 8, 8);
   IPAddress secondaryDNS(8, 8, 4, 4); // optional
 
-
   WiFi.mode(WIFI_STA);
- if (cpuid.startsWith("64b7084cff5c"))
+  if (cpuid.startsWith("64b7084cff5c"))
   {
     IPAddress local_IP(192, 168, 2, 103);
-     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
-  else{
+  else
+  {
 
-     IPAddress local_IP(192, 168, 2, 104);
-     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    IPAddress local_IP(192, 168, 2, 104);
+    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
- 
 
   WiFi.begin(ssid, password);
 
-  Serial.println("");
-
-  // Wait for connection
-  // Connection-info in secrets.h
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -256,28 +240,24 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-void driveStrategy()
+float GetCleanDist(std::vector<float> &vec)
 {
-  drive.Forward(1);
-  delay(5000);
-}
-
-float GetCleanDist(std::vector<float> &vec){
   float res = 0.0;
   for (int i = 0; i < 3; i++)
   {
     res += vec.at(i);
   }
   return res / 3;
-  
 }
 
-bool objectInRange(std::vector<float> &vec) {
+bool objectInRange(std::vector<float> &vec)
+{
   float dist = GetCleanDist(vec);
-  return dist > 0 && dist < 20;
+  return dist > 2 && dist < 20;
 }
 
-void updateDistSensors(){
+void updateDistSensors()
+{
   float fD = frontdistance.GetDistance();
   float reD = reardistance.GetDistance();
   float riD = rightdistance.GetDistance();
@@ -288,27 +268,29 @@ void updateDistSensors(){
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
-
-
-void masterStrat() {
-  if(objectInRange(frontDist) && objectInRange(rearDist)){
-    drive.Stop();
-    light.Test();
-  }
-  else if (objectInRange(frontDist)){
-    drive.Reverse(1);
-    light.Off();
-
-  } else { 
+void masterStrat()
+{
+  if (!objectInRange(frontDist))
+  {
     drive.Forward(1);
-    light.Off();
+    light.HeadLight();
+  }
+  else
+  {    
+    drive.Stop();
+    light.HeadLight();
   }
 
-  if (objectInRange(leftDist)) { 
+  if (objectInRange(leftDist))
+  {
     steer.Right();
-  } else if (objectInRange(rightDist)) { 
+  }
+  else if (objectInRange(rightDist))
+  {
     steer.Left();
-  }else{
+  }
+  else
+  {
     steer.Stop();
   }
 }
@@ -317,9 +299,10 @@ void loop()
 {
   idx = loopcount % 3;
   updateDistSensors();
-  if(idx == 0){
+  if (idx == 0)
+  {
     masterStrat();
   }
-  delay(100);
+  delay(10);
   loopcount++;
 }
