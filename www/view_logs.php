@@ -3,6 +3,9 @@
 </head>
 <body>
 <h1> 2024 Scania Hack: N&ouml;&ouml;rds </h1>
+<div>
+<a href=index.php>HOME</a>
+</div>
 <h2>Logging</h2>
 <form action="view_logs.php" method=POST>
 <div>
@@ -40,7 +43,7 @@ $conn = new mysqli('localhost','root','hack1','scaniahack');
 if ($conn->connect_error) {
 	die("Connection failed: " . $conn->connect_error);
 }
-$sql = "SELECT time,msg FROM Logging;";
+$sql = "SELECT time,msg FROM Logging where chipid=\"".$_POST['ChipID']."\" ORDER BY id DESC limit 1000;";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
 	while($row = $result->fetch_assoc()) {
