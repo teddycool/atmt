@@ -15,7 +15,7 @@ if ($conn->connect_error) {
 	die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT DISTINCT chipid FROM Logging ORDER BY id DESC;";
+$sql = "SELECT DISTINCT chipid FROM Logging;";
 
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
@@ -40,7 +40,7 @@ $conn = new mysqli('localhost','root','hack1','scaniahack');
 if ($conn->connect_error) {
 	die("Connection failed: " . $conn->connect_error);
 }
-$sql = "SELECT time,msg FROM Logging;";
+$sql = "SELECT time,msg FROM Logging ORDER BY id DESC;";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
 	while($row = $result->fetch_assoc()) {
