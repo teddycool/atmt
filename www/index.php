@@ -1,8 +1,19 @@
+<?php echo "Hello world from apache 2 !!!!"; ?>
 <html>
 <head>
-
 </head>
+
 <body>
-<h1> Hello Scania Hack 2024 </h1>
+<h2>This is edited from Linux on a smb mounted share</h2>
+
+<p>To mount the www folder follwo the next two steps
+<br>mkdir ~/www
+<br>sudo mount -t cifs -o uid=$(id -u),gid=$(id -g),forceuid,forcegid //192.168.2.2/hack-www www/
+
+<p>To mount the storage folder follwo the next two steps
+<br>mkdir ~/storage
+<br>sudo mount -t cifs -o uid=$(id -u),gid=$(id -g),forceuid,forcegid //192.168.2.2/hack-storage storage/
+<div>
+  <a href=view_logs.php>To view the logs click here</a>
+</div>
 </body>
-</html>

@@ -3,6 +3,9 @@
 </head>
 <body>
 <h1> 2024 Scania Hack: N&ouml;&ouml;rds </h1>
+<div>
+<a href=index.php>HOME</a>
+</div>
 <h2>Logging</h2>
 <form action="view_logs.php" method=POST>
 <div>
