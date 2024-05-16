@@ -303,19 +303,19 @@ float GetCleanDist(std::vector<float> &vec){
 
 bool objectInRange(std::vector<float> &vec) {
   float dist = GetCleanDist(vec);
-  return dist > 5 && dist < 20;
-}
 
+  return dist > 0 && dist < 20;
+}
 
 void updateDistSensors(){
   float fD = frontdistance.GetDistance();
   float reD = reardistance.GetDistance();
   float riD = rightdistance.GetDistance();
   float lD = leftdistance.GetDistance();
-  frontDist[idx] = fD > 100.0 ? 100 : fD;
-  rearDist[idx] = reD > 100.0 ? 100 : reD;
-  rightDist[idx] = riD > 100.0 ? 100 : riD;
-  leftDist[idx] = lD > 100.0 ? 100 : lD;
+  frontDist[idx] = fD > 100.0 ? 100.0 : fD;
+  rearDist[idx] = reD > 100.0 ? 100.0 : reD;
+  rightDist[idx] = riD > 100.0 ? 100.0 : riD;
+  leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
 
@@ -345,21 +345,17 @@ void masterStrat() {
 
 void loop()
 {
-  /*
   idx = loopcount % 3;
   updateDistSensors();
   if(idx == 0){
     masterStrat();
   }
-  */
+
   mqttmeasurements();
 
-  drive.Stop();
+  //drive.Stop();
   //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  delay(1000);
+  delay(100);
   loopcount++;
-  if(loopcount < 2){
-    (loopcount%2)?drive.Forward(1):drive.Reverse(1);
-  }
 }
