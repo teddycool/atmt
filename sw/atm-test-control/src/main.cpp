@@ -101,8 +101,26 @@ void setup()
   cpuid = uids(); // Read the unique boxid
   Serial.print("Hello from ");
   Serial.println(cpuid);
+
+  IPAddress local_IP(192, 168, 2, 104);
+
+  if (cpuid == "64b7084cff5c")
+  {
+    IPAddress local_IP(192, 168, 2, 103);
+  }
+
+  IPAddress gateway(192, 168, 2, 1);
+  IPAddress subnet(255, 255, 0, 0);
+  IPAddress primaryDNS(8, 8, 8, 8);
+  IPAddress secondaryDNS(8, 8, 4, 4); // optional
   WiFi.mode(WIFI_STA);
+
+  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS))
+  {
+    Serial.println("STA Failed to configure");
+  }
   WiFi.begin(ssid, password);
+
   Serial.println("");
 
   // Wait for connection
@@ -120,6 +138,7 @@ void setup()
   server.begin();
   postlog("OTA server started");
   postlog("ATMT started!");
+  postlog("Mac: " + String(WiFi.macAddress()));
   frontdistance.SetUp();
   reardistance.SetUp();
   rightdistance.SetUp();
