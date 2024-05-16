@@ -6,12 +6,12 @@ Drive::Drive(Motor motor) : motor(motor){
 
 void Drive::Forward(int speed){
   Serial.println("Motor forwarding");
-  motor.Start();
+  motor.Reverse();
 }
 
 void Drive::Reverse(int speed){
   Serial.println("Motor reversing");
-  motor.Reverse();
+  motor.Start();
 }
 
 void Drive::Stop(){
