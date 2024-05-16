@@ -60,6 +60,12 @@ std::vector<float> rightDist(3, 100);
 
 int loopcount = 0;
 int idx = 0;
+
+// for logging
+char payload[300];
+DynamicJsonDocument doc(2048);
+String topic;
+
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -83,35 +89,41 @@ void mqttlog(String msg,String logType="logging"){
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
 
-  String topic = cpuid +"/" + logType;
-  Serial.println("mqtt cpuid: "+ cpuid);
-  Serial.println("mqtt topic: "+ topic);
-  Serial.println("mqtt msg: "+msg);
+  //String topic = cpuid +"/" + logType;
+  topic = cpuid +"/" + logType;
+  //Serial.println("mqtt cpuid: "+ cpuid);
+  //Serial.println("mqtt topic: "+ topic);
+  //Serial.println("mqtt msg: " + msg);
   mqttClient.publish(topic.c_str(),msg.c_str());
 }
 
 void mqttmeasurements(){
-  String topic = "measurements";
-  mqttlog(topic,topic);
-
+  //String topic = "measurements";
+  topic = "measurements";
   // Create the JSON document
-  DynamicJsonDocument doc(1024);
-  doc["Distance_Front"] = frontdistance.GetDistance();
-  doc["Distance_Rear"] = reardistance.GetDistance();
-  doc["Distance_Right"] = rightdistance.GetDistance();
-  doc["Distance_Left"] = leftdistance.GetDistance();
+  //DynamicJsonDocument doc(1024);
+  doc["ID"] = cpuid;
 
-  doc["Accel_X"] = dynamics.GetAccX();
-  doc["Accel_Y"] = dynamics.GetAccY();
-  doc["Accel_Z"] = dynamics.GetAccZ();
+  doc["T"] = int(millis());
 
-  doc["Gyro_X"] = dynamics.GetGyroX();
-  doc["Gyro_Y"] = dynamics.GetGyroY();
-  doc["Gyro_Z"] = dynamics.GetGyroZ();
+  doc["it"] = loopcount;
 
-  doc["Compass_X"] = dynamics.GetCompX();
-  doc["Compass_Y"] = dynamics.GetCompY();
-  doc["Compass_Z"] = dynamics.GetCompZ();
+  doc["DisFront"] = frontdistance.GetDistance();
+  doc["DisRear"] = reardistance.GetDistance();
+  doc["DisRight"] = rightdistance.GetDistance();
+  doc["DisLeft"] = leftdistance.GetDistance();
+
+  doc["AccX"] = dynamics.GetAccX();
+  doc["AccY"] = dynamics.GetAccY();
+  doc["AccZ"] = dynamics.GetAccZ();
+
+  doc["GyX"] = dynamics.GetGyroX();
+  doc["GyY"] = dynamics.GetGyroY();
+  doc["GyZ"] = dynamics.GetGyroZ();
+
+  doc["ComX"] = dynamics.GetCompX();
+  doc["ComY"] = dynamics.GetCompY();
+  doc["ComZ"] = dynamics.GetCompZ();
   /*
      JsonArray data = doc.createNestedArray("data");
      data.add(48.756080);
@@ -119,10 +131,11 @@ void mqttmeasurements(){
      */
 
   // Serialize JSON to string
-  char payload[300];
+  //char payload[300];
   serializeJson(doc, payload, sizeof(payload));
 
   Serial.println("payload: "+String(payload));
+
   mqttlog(payload,topic);
 }
 
@@ -173,6 +186,8 @@ WiFiClient wificlient; // Used for sending http to url
 
 String postlog(String msg)
 {
+  mqttlog(msg);
+  Serial.println(msg);
   WiFiClient wificlient; // Used for sending http to url
   HTTPClient http;
 
@@ -288,19 +303,19 @@ float GetCleanDist(std::vector<float> &vec){
 
 bool objectInRange(std::vector<float> &vec) {
   float dist = GetCleanDist(vec);
-  return dist > 5 && dist < 20;
-}
 
+  return dist > 0 && dist < 20;
+}
 
 void updateDistSensors(){
   float fD = frontdistance.GetDistance();
   float reD = reardistance.GetDistance();
   float riD = rightdistance.GetDistance();
   float lD = leftdistance.GetDistance();
-  frontDist[idx] = fD > 100.0 ? 100 : fD;
-  rearDist[idx] = reD > 100.0 ? 100 : reD;
-  rightDist[idx] = riD > 100.0 ? 100 : riD;
-  leftDist[idx] = lD > 100.0 ? 100 : lD;
+  frontDist[idx] = fD > 100.0 ? 100.0 : fD;
+  rearDist[idx] = reD > 100.0 ? 100.0 : reD;
+  rightDist[idx] = riD > 100.0 ? 100.0 : riD;
+  leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
 
@@ -330,19 +345,18 @@ void masterStrat() {
 
 void loop()
 {
-  /*
   idx = loopcount % 3;
   updateDistSensors();
   if(idx == 0){
     masterStrat();
   }
-  */
+
   mqttmeasurements();
 
-  drive.Stop();
-  mqttlog("Drive Stop");
+  //drive.Stop();
+  //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  delay(1000);
+  delay(100);
   loopcount++;
   if(loopcount < 2){
     (loopcount%2)?drive.Forward(1):drive.Reverse(1);
