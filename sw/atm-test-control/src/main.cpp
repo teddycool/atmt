@@ -291,7 +291,7 @@ void updateDistSensors(){
 
 
 
-void strategy() {
+void masterStrat() {
   if(objectInRange(frontDist) && objectInRange(rearDist)){
     drive.Stop();
     light.Test();
@@ -319,7 +319,7 @@ void loop()
   idx = loopcount % 3;
   updateDistSensors();
   if(idx == 0){
-    strategy();
+    masterStrat();
   }
   delay(100);
   loopcount++;
