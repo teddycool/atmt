@@ -9,6 +9,7 @@
 
 #include "motor.h"
 #include "drive.h"
+#include "steer.h"
 #include "usensor.h"
 #include "light.h"
 #include "dynamics.h"
@@ -48,9 +49,10 @@ Usensor reardistance(TREAR, EREAR);
 Motor motor(M1E_PIN, M1F_PIN, M1R_PIN);
 Drive drive(motor);
 Motor steering(SENABLE, SLEFT, SRIGHT);
+Steer steer(steering);
 Light light;
 float frontDist = 100;
-
+float rearDist = 100;
 int loopcount = 0;
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
@@ -67,11 +69,14 @@ String uids()
   return uidds;
 }
 
+
 void mqttlog(String msg,String logType="logging"){
+
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
+
   String topic = cpuid +"/" + logType;
   mqttClient.publish(topic.c_str(),msg.c_str());
 }
@@ -175,6 +180,15 @@ String postlog(String msg)
   return payload;
 }
 
+// void steerRight(){
+//   steering.Reverse();
+
+// }
+// void steerLeft(){
+
+//   steering.Start();
+// }
+
 void setup()
 {
 
@@ -183,23 +197,28 @@ void setup()
   Serial.print("Hello from ");
   Serial.println(cpuid);
 
-  IPAddress local_IP(192, 168, 2, 104);
-
-  if (cpuid == "64b7084cff5c")
-  {
-    IPAddress local_IP(192, 168, 2, 103);
-  }
-
+  
   IPAddress gateway(192, 168, 2, 1);
   IPAddress subnet(255, 255, 0, 0);
   IPAddress primaryDNS(8, 8, 8, 8);
   IPAddress secondaryDNS(8, 8, 4, 4); // optional
-  WiFi.mode(WIFI_STA);
 
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS))
+
+  WiFi.mode(WIFI_STA);
+ if (cpuid.startsWith("64b7084cff5c"))
   {
-    Serial.println("STA Failed to configure");
+    IPAddress local_IP(192, 168, 2, 103);
+     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+
   }
+  else{
+
+     IPAddress local_IP(192, 168, 2, 104);
+     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+
+  }
+ 
+
   WiFi.begin(ssid, password);
 
   Serial.println("");
@@ -232,31 +251,52 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-void driveStrategy(){
+void driveStrategy()
+{
   drive.Forward(1);
-  delay(1000);
-  drive.Stop();
-  delay(1000);
-  drive.Reverse(1);
-  delay(1000);
-  drive.Stop();
-  light.Test();
   delay(5000);
+  steer.Right();
+  delay(5000);
+  drive.Stop();
+  delay(1000);
+  light.Test();
+  
 }
 
-void strategy() {
- frontDist = frontdistance.GetDistance(); //cm
- if (frontDist < 20) {
-    light.Off();
+bool somethingAhead()
+{
+  return frontDist > 5 && frontDist < 20;
+}
+
+bool somethingBehind()
+{
+  return rearDist > 5 && rearDist < 20;
+}
+
+
+void strategy()
+{
+  if (somethingAhead())
+  {
     drive.Reverse(1);
     light.Test();
- } else {
+  }
+  else if (somethingBehind)
+  {
+    drive.Forward(1);
+    light.Test();
+  }
+  else
+  {
     drive.Stop();
- }
+    light.Off();
+  }
 }
 
 void loop()
 {
+  frontDist = frontdistance.GetDistance(); // update fron dist
+  rearDist = reardistance.GetDistance();   // update fron dist
   strategy();
   delay(100);
 }
