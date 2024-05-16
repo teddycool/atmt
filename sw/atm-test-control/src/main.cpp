@@ -139,6 +139,11 @@ void strategy(){
   drive.Reverse(1);
   delay(1000);
   drive.Stop();
+  light.Test();
+  delay(5000);
+  light.Off();
+  
+
 }
 
 void loop()
