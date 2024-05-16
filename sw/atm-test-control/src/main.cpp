@@ -146,12 +146,12 @@ void driveStrategy(){
 
 void strategy() {
  frontDist = frontdistance.GetDistance(); //cm
- if (frontDist > 20) {
+ if (frontDist < 20) {
     light.Off();
-    drive.Forward(1);
+    drive.Reverse(1);
+    light.Test();
  } else {
     drive.Stop();
-    light.Test();
  }
 }
 
