@@ -67,13 +67,14 @@ String uids()
   return uidds;
 }
 
-void mqttlog(String msg){
+void mqttlog(String msg)
+{
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
   String topic = cpuid + "/logging";
-  mqttClient.publish(topic.c_str(),msg.c_str());
+  mqttClient.publish(topic.c_str(), msg.c_str());
 }
 
 String postlog(String msg)
@@ -112,23 +113,28 @@ void setup()
   Serial.print("Hello from ");
   Serial.println(cpuid);
 
-  IPAddress local_IP(192, 168, 2, 104);
-
-  if (cpuid.startsWith("64b7084cff5c"))
-  {
-    IPAddress local_IP(192, 168, 2, 103);
-  }
-
+  
   IPAddress gateway(192, 168, 2, 1);
   IPAddress subnet(255, 255, 0, 0);
   IPAddress primaryDNS(8, 8, 8, 8);
   IPAddress secondaryDNS(8, 8, 4, 4); // optional
-  WiFi.mode(WIFI_STA);
 
-  if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS))
+
+  WiFi.mode(WIFI_STA);
+ if (cpuid.startsWith("64b7084cff5c"))
   {
-    Serial.println("STA Failed to configure");
+    IPAddress local_IP(192, 168, 2, 103);
+     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+
   }
+  else{
+
+     IPAddress local_IP(192, 168, 2, 104);
+     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+
+  }
+ 
+
   WiFi.begin(ssid, password);
 
   Serial.println("");
@@ -161,7 +167,8 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-void driveStrategy(){
+void driveStrategy()
+{
   drive.Forward(1);
   delay(1000);
   drive.Stop();
@@ -173,31 +180,39 @@ void driveStrategy(){
   delay(5000);
 }
 
-bool somethingAhead() {
- return frontDist > 5 && frontDist < 20;
+bool somethingAhead()
+{
+  return frontDist > 5 && frontDist < 20;
 }
 
-bool somethingBehind() {
- return rearDist > 5 && rearDist < 20;
+bool somethingBehind()
+{
+  return rearDist > 5 && rearDist < 20;
 }
 
-void strategy() {
- if(somethingAhead()){
-  drive.Reverse(1);
-  light.Test();
- } else if (somethingBehind) { 
-  drive.Forward(1);
-  light.Test();
- } else {
-  drive.Stop();
-  light.Off();
- }
+void strategy()
+{
+  if (somethingAhead())
+  {
+    drive.Reverse(1);
+    light.Test();
+  }
+  else if (somethingBehind)
+  {
+    drive.Forward(1);
+    light.Test();
+  }
+  else
+  {
+    drive.Stop();
+    light.Off();
+  }
 }
 
 void loop()
 {
   frontDist = frontdistance.GetDistance(); // update fron dist
-  rearDist = reardistance.GetDistance(); // update fron dist
+  rearDist = reardistance.GetDistance();   // update fron dist
   strategy();
   delay(100);
 }
