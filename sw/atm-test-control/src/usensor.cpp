@@ -8,7 +8,7 @@ Usensor::Usensor(uint8_t trig, uint8_t echo) : ECHO(echo), TRIG(trig)
 }
 
 void Usensor::SetUp(){
-    Serial.println("US pin setup...");
+   // Serial.println("US pin setup...");
     pinMode(TRIG, OUTPUT);
     pinMode(ECHO, INPUT);
 }
