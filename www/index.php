@@ -1,4 +1,3 @@
-<?php echo "Hello world from apache 2 !!!!"; ?>
 <html>
 <head>
 </head>
@@ -15,5 +14,8 @@
 <br>sudo mount -t cifs -o uid=$(id -u),gid=$(id -g),forceuid,forcegid //192.168.2.2/hack-storage storage/
 <div>
   <a href=view_logs.php>To view the logs click here</a>
+</div>
+<div>
+  <a href=http://192.168.2.3/update>To OTA</a>
 </div>
 </body>
