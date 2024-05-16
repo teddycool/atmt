@@ -13,7 +13,7 @@
 #include "secrets.h"
 
 // Define pin-name and GPIO#. Pin # are fixed but can ofcourse be named differently
-// Motor
+// Motor test
 #define M1E_PIN 2
 #define M1F_PIN 4
 #define M1R_PIN 5
