@@ -104,7 +104,7 @@ void setup()
 
   IPAddress local_IP(192, 168, 2, 104);
 
-  if (cpuid == "64b7084cff5c")
+  if (cpuid.startsWith("64b7084cff5c"))
   {
     IPAddress local_IP(192, 168, 2, 103);
   }
