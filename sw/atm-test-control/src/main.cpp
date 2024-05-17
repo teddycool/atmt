@@ -361,13 +361,16 @@ void masterStrat(int sideoffset)
       steerRight(forward);
     }
   }
-  if (objectInRange(cleanDistLeft, sideoffset))
+  else
   {
-    steerRight(forward);
-  }
-  if (objectInRange(cleanDistRight, sideoffset))
-  {
-    steerLeft(forward);
+    if (objectInRange(cleanDistLeft, sideoffset))
+    {
+      steerRight(forward);
+    }
+    if (objectInRange(cleanDistRight, sideoffset))
+    {
+      steerLeft(forward);
+    }
   }
 }
 
