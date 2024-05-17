@@ -81,8 +81,8 @@ String uids()
   return uidds;
 }
 
-
-void mqttlog(String msg,String logType="logging"){
+void mqttlog(String msg, String logType = "logging")
+{
 
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
@@ -139,14 +139,16 @@ void mqttmeasurements(){
   mqttlog(payload,topic);
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
- 
+void callback(char *topic, byte *payload, unsigned int length)
+{
+
   String msg = "Received: ";
-  mqttlog(msg,"remote_echo");
+  mqttlog(msg, "remote_echo");
   // Handle incoming message
 }
 
-void mqttListen(){
+void mqttListen()
+{
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
@@ -157,14 +159,12 @@ void mqttListen(){
 
 }
 
-
-
-void postvalue(String name, float value, String unit){
-WiFiClient wificlient; // Used for sending http to url
+void postvalue(String name, float value, String unit)
+{
+  WiFiClient wificlient; // Used for sending http to url
   HTTPClient http;
 
-  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name
-    + "&value=" + String(value) + "&unit=" + unit;
+  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name + "&value=" + String(value) + "&unit=" + unit;
   http.begin(wificlient, url);
   int httpResponseCode = http.GET();
   String payload = "{}";
@@ -214,15 +214,6 @@ String postlog(String msg)
   return payload;
 }
 
-// void steerRight(){
-//   steering.Reverse();
-
-// }
-// void steerLeft(){
-
-//   steering.Start();
-// }
-
 void setup()
 {
 
@@ -231,34 +222,26 @@ void setup()
   Serial.print("Hello from ");
   Serial.println(cpuid);
 
-  
   IPAddress gateway(192, 168, 2, 1);
   IPAddress subnet(255, 255, 0, 0);
   IPAddress primaryDNS(8, 8, 8, 8);
   IPAddress secondaryDNS(8, 8, 4, 4); // optional
 
-
   WiFi.mode(WIFI_STA);
- if (cpuid.startsWith("64b7084cff5c"))
+  if (cpuid.startsWith("64b7084cff5c"))
   {
     IPAddress local_IP(192, 168, 2, 103);
-     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
-  else{
+  else
+  {
 
-     IPAddress local_IP(192, 168, 2, 104);
-     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    IPAddress local_IP(192, 168, 2, 104);
+    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
- 
 
   WiFi.begin(ssid, password);
 
-  Serial.println("");
-
-  // Wait for connection
-  // Connection-info in secrets.h
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -285,29 +268,24 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-void driveStrategy()
+float GetCleanDist(std::vector<float> &vec)
 {
-  drive.Forward(1);
-  delay(5000);
-}
-
-float GetCleanDist(std::vector<float> &vec){
   float res = 0.0;
   for (int i = 0; i < 3; i++)
   {
     res += vec.at(i);
   }
   return res / 3;
-  
 }
 
-bool objectInRange(std::vector<float> &vec) {
+bool objectInRange(std::vector<float> &vec, int rng )
+{
   float dist = GetCleanDist(vec);
-
-  return dist > 0 && dist < 20;
+  return dist > 2 && dist < rng;
 }
 
-void updateDistSensors(){
+void updateDistSensors()
+{
   float fD = frontdistance.GetDistance();
   float reD = reardistance.GetDistance();
   float riD = rightdistance.GetDistance();
@@ -318,44 +296,50 @@ void updateDistSensors(){
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
-
-
-void masterStrat() {
-  if(objectInRange(frontDist) && objectInRange(rearDist)){
-    drive.Stop();
-    light.Test();
-  }
-  else if (objectInRange(frontDist)){
-    drive.Reverse(1);
-    light.Off();
-
-  } else { 
+void masterStrat(int sideoffset)
+{
+  if (!objectInRange(frontDist, 30))
+  {
     drive.Forward(1);
-    light.Off();
+    light.HeadLight();
+  }
+  else
+  {   
+     if (!objectInRange(rearDist, 30)){ 
+    drive.Reverse(1);
+    light.BrakeLight();
+     }
+     else{
+      drive.Stop();
+     }
   }
 
-  if (objectInRange(leftDist)) { 
+  steer.Stop();
+
+  if (objectInRange(leftDist,sideoffset))
+  {
     steer.Right();
-  } else if (objectInRange(rightDist)) { 
-    steer.Left();
-  }else{
-    steer.Stop();
   }
+  if (objectInRange(rightDist, sideoffset))
+  {
+    steer.Left();
+  }
+    
 }
 
 void loop()
 {
   idx = loopcount % 3;
   updateDistSensors();
-  if(idx == 0){
-    masterStrat();
+  if (idx == 0)
+  {
+    masterStrat(45);
+    mqttmeasurements();
   }
-
-  mqttmeasurements();
 
   //drive.Stop();
   //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  delay(100);
+  delay(10);
   loopcount++;
 }

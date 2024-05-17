@@ -13,6 +13,8 @@ public:
   void Set(int, uint8_t);
   void Test();
   void HeadLight();
+  void BrakeLight();
+
 
 };
 
