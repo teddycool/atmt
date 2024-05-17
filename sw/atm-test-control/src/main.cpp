@@ -328,6 +328,33 @@ void updateDistSensors()
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
+//Move forward for 2 seconds and then steer right for 2 seconds then stop steering. 
+//Reverse the car for 2 seconds and then stop the drive.
+//Move forward for 2 seconds and then steer left for 2 seconds
+//stop steering and stop drive.
+
+void simpleStrategy(){
+
+  drive.Forward(1);
+  delay(2000);
+  steer.Right();
+  delay(2000);
+  steer.Stop();
+  drive.Reverse(1);
+  delay(2000);
+  drive.Stop();
+  drive.Forward(1);
+  delay(2000);
+  steer.Left();
+  delay(2000);
+  steer.Stop();
+  drive.Stop();
+
+  
+  
+
+}
+
 void masterStrat(int sideoffset)
 {
   if (!objectInRange(frontDist, 30))
@@ -363,12 +390,13 @@ void loop()
 {
   
   idx = loopcount % 3;
-  updateDistSensors();
-  if (idx == 0)
-  {
-    masterStrat(45);
+  //updateDistSensors();
+  // if (idx == 0)
+  // {
+    //masterStrat(45);
+    simpleStrategy();
     mqttmeasurements();
-  }
+  // }
 
  
   if (!client.connected()) {
