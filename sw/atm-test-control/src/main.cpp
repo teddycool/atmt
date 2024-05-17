@@ -6,6 +6,7 @@
 #include <HTTPClient.h>
 #include <ArduinoUniqueID.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 #include <vector>
 
 #include "motor.h"
@@ -59,6 +60,12 @@ std::vector<float> rightDist(3, 100);
 
 int loopcount = 0;
 int idx = 0;
+
+// for logging
+char payload[300];
+DynamicJsonDocument doc(2048);
+String topic;
+
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -82,37 +89,54 @@ void mqttlog(String msg, String logType = "logging")
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
 
-  String topic = cpuid + "/" + logType;
-  mqttClient.publish(topic.c_str(), msg.c_str());
+  //String topic = cpuid +"/" + logType;
+  topic = cpuid +"/" + logType;
+  //Serial.println("mqtt cpuid: "+ cpuid);
+  //Serial.println("mqtt topic: "+ topic);
+  //Serial.println("mqtt msg: " + msg);
+  mqttClient.publish(topic.c_str(),msg.c_str());
 }
 
-void mqttmeasurements()
-{
-  String topic = "measurements";
+void mqttmeasurements(){
+  //String topic = "measurements";
+  topic = "measurements";
+  // Create the JSON document
+  //DynamicJsonDocument doc(1024);
+  doc["ID"] = cpuid;
 
-  mqttlog(topic, topic);
+  doc["T"] = int(millis());
 
-  String json = "{Sensors:";
-  json += "Distance_Front:" + String(frontdistance.GetDistance()) + ",";
-  json += "Distance_Rear:" + String(reardistance.GetDistance()) + ",";
-  json += "Distance_Right:" + String(rightdistance.GetDistance()) + ",";
-  json += "Distance_Left:" + String(leftdistance.GetDistance()) + ",";
+  doc["it"] = loopcount;
 
-  json += "Accellerometer_X:" + String(dynamics.GetAccX()) + ",";
-  json += "Accellerometer_Y:" + String(dynamics.GetAccY()) + ",";
-  json += "Accellerometer_Z:" + String(dynamics.GetAccZ()) + ",";
+  doc["DisFront"] = frontdistance.GetDistance();
+  doc["DisRear"] = reardistance.GetDistance();
+  doc["DisRight"] = rightdistance.GetDistance();
+  doc["DisLeft"] = leftdistance.GetDistance();
 
-  json += "Gyro_X:" + String(dynamics.GetGyroX()) + ",";
-  json += "Gyro_Y:" + String(dynamics.GetGyroY()) + ",";
-  json += "Gyro_Z:" + String(dynamics.GetGyroZ()) + ",";
+  doc["AccX"] = dynamics.GetAccX();
+  doc["AccY"] = dynamics.GetAccY();
+  doc["AccZ"] = dynamics.GetAccZ();
 
-  json += "Compass_X:" + String(dynamics.GetCompX()) + ",";
-  json += "Compass_Y:" + String(dynamics.GetCompY()) + ",";
-  json += "Compass_Z:" + String(dynamics.GetCompZ());
+  doc["GyX"] = dynamics.GetGyroX();
+  doc["GyY"] = dynamics.GetGyroY();
+  doc["GyZ"] = dynamics.GetGyroZ();
 
-  json += "}";
+  doc["ComX"] = dynamics.GetCompX();
+  doc["ComY"] = dynamics.GetCompY();
+  doc["ComZ"] = dynamics.GetCompZ();
+  /*
+     JsonArray data = doc.createNestedArray("data");
+     data.add(48.756080);
+     data.add(2.302038);
+     */
 
-  mqttlog(json, topic);
+  // Serialize JSON to string
+  //char payload[300];
+  serializeJson(doc, payload, sizeof(payload));
+
+  Serial.println("payload: "+String(payload));
+
+  mqttlog(payload,topic);
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -129,8 +153,10 @@ void mqttListen()
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
-  mqttClient.subscribe("#/remote/");
+  String topic = cpuid + "/" + "remote";
+  mqttClient.subscribe(topic.c_str());
   mqttClient.setCallback(callback);
+
 }
 
 void postvalue(String name, float value, String unit)
@@ -160,6 +186,8 @@ void postvalue(String name, float value, String unit)
 
 String postlog(String msg)
 {
+  mqttlog(msg);
+  Serial.println(msg);
   WiFiClient wificlient; // Used for sending http to url
   HTTPClient http;
 
@@ -250,10 +278,10 @@ float GetCleanDist(std::vector<float> &vec)
   return res / 3;
 }
 
-bool objectInRange(std::vector<float> &vec)
+bool objectInRange(std::vector<float> &vec, int rng )
 {
   float dist = GetCleanDist(vec);
-  return dist > 2 && dist < 20;
+  return dist > 2 && dist < rng;
 }
 
 void updateDistSensors()
@@ -268,31 +296,35 @@ void updateDistSensors()
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
-void masterStrat()
+void masterStrat(int sideoffset)
 {
-  if (!objectInRange(frontDist))
+  if (!objectInRange(frontDist, 30))
   {
     drive.Forward(1);
     light.HeadLight();
   }
   else
-  {    
-    drive.Stop();
-    light.HeadLight();
+  {   
+     if (!objectInRange(rearDist, 30)){ 
+    drive.Reverse(1);
+    light.BrakeLight();
+     }
+     else{
+      drive.Stop();
+     }
   }
 
-  if (objectInRange(leftDist))
+  steer.Stop();
+
+  if (objectInRange(leftDist,sideoffset))
   {
     steer.Right();
   }
-  else if (objectInRange(rightDist))
+  if (objectInRange(rightDist, sideoffset))
   {
     steer.Left();
   }
-  else
-  {
-    steer.Stop();
-  }
+    
 }
 
 void loop()
@@ -301,8 +333,13 @@ void loop()
   updateDistSensors();
   if (idx == 0)
   {
-    masterStrat();
+    masterStrat(45);
+    mqttmeasurements();
   }
+
+  //drive.Stop();
+  //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
+
   delay(10);
   loopcount++;
 }
