@@ -374,4 +374,5 @@ void loop()
   //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
   Delay(500);
+  loopcount++;
 }
