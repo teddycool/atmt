@@ -518,10 +518,10 @@ bool objectInRange(std::vector<float> &vec) {
 }
 
 void updateDistSensors(){
-  float fD = frontdistance.GetDistance();
-  float reD = reardistance.GetDistance();
-  float riD = rightdistance.GetDistance();
-  float lD = leftdistance.GetDistance();
+  float fD = globalVar_get(rawDistFront);
+  float reD = globalVar_get(rawDistBack);
+  float riD = globalVar_get(rawDistRight);
+  float lD = globalVar_get(rawDistLeft);
   frontDist[idx] = fD > 100.0 ? 100.0 : fD;
   rearDist[idx] = reD > 100.0 ? 100.0 : reD;
   rightDist[idx] = riD > 100.0 ? 100.0 : riD;
@@ -538,10 +538,12 @@ void masterStrat() {
   else if (objectInRange(frontDist)){
     drive.Reverse(1);
     light.Off();
+    light.BrakeLight();
 
   } else { 
     drive.Forward(1);
     light.Off();
+    light.HeadLight();
   }
 
   if (objectInRange(leftDist)) { 
@@ -564,14 +566,14 @@ void loop()
   }
 
  
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+  // if (!client.connected()) {
+  //   reconnect();
+  // }
+  // client.loop();
 
-  mqttmeasurements();
-  mqttlog("loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
+  // mqttmeasurements();
+  // mqttlog("loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  Delay(10);
+  Delay(200);
   loopcount++;
 }
