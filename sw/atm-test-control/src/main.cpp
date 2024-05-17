@@ -66,6 +66,10 @@ char payload[300];
 DynamicJsonDocument doc(2048);
 String topic;
 
+// for mqtt listening
+WiFiClient espClient;
+PubSubClient client(espClient);
+
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -134,17 +138,40 @@ void mqttmeasurements(){
   //char payload[300];
   serializeJson(doc, payload, sizeof(payload));
 
-  Serial.println("payload: "+String(payload));
+  //Serial.println("payload: "+String(payload));
 
   mqttlog(payload,topic);
 }
 
-void callback(char *topic, byte *payload, unsigned int length)
-{
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
 
-  String msg = "Received: ";
-  mqttlog(msg, "remote_echo");
-  // Handle incoming message
+void reconnect() {
+  // Loop until reconnected
+  while (!client.connected()) {
+    Serial.print(client.state());
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect(cpuid.c_str())) {
+      Serial.println("connected");
+      // Subscribe to a topic
+      topic = cpuid + "/" + "remote" ;
+      Serial.println("Listening to topic: "+topic); 
+      client.subscribe(topic.c_str());
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
 }
 
 void mqttListen()
@@ -265,6 +292,11 @@ void setup()
   light.SetUp();
   dynamics.SetUp();
 
+    // Set MQTT server details
+  client.setServer("192.168.2.2", 1883);
+  // Callback function to handle incoming messages
+  client.setCallback(callback);
+
   Serial.println("Setup is done!");
 }
 
@@ -329,6 +361,7 @@ void masterStrat(int sideoffset)
 
 void loop()
 {
+  /*
   idx = loopcount % 3;
   updateDistSensors();
   if (idx == 0)
@@ -336,10 +369,17 @@ void loop()
     masterStrat(45);
     mqttmeasurements();
   }
+*/
+  mqttmeasurements();
 
-  //drive.Stop();
+  if (!client.connected()) {
+    reconnect();
+  }else{
+    Serial.print(client.state());
+  }
+  client.loop();
+  drive.Stop();
   //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  delay(10);
-  loopcount++;
+  delay(500);
 }
