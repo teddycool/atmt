@@ -151,10 +151,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
+  String msg = "";
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
+    msg+=(char)payload[i];
   }
   Serial.println();
+  mqttlog(msg,"echo");
 }
 
 void reconnect() {
