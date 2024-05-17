@@ -317,7 +317,8 @@ float GetCleanDist(std::vector<float> &vec){
 bool objectInRange(std::vector<float> &vec) {
   float dist = GetCleanDist(vec);
 
-  return dist > 0 && dist < 20;
+  return dist > 0 && dist < rng;
+
 }
 
 void updateDistSensors(){
@@ -358,23 +359,22 @@ void masterStrat() {
 
 void loop()
 {
-  /*
+  
   idx = loopcount % 3;
   updateDistSensors();
   if(idx == 0){
     masterStrat();
   }
-*/
 
+ 
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
-  drive.Stop();
-  
+
   mqttmeasurements();
   mqttlog("loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  Delay(500);
+  Delay(10);
   loopcount++;
 }
