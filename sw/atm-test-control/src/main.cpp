@@ -70,6 +70,10 @@ String topic;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+void Delay(int ms){
+  vTaskDelay(pdMS_TO_TICKS(ms));
+}
+
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -147,10 +151,13 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
+  String msg = "";
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
+    msg+=(char)payload[i];
   }
   Serial.println();
+  mqttlog(msg,"echo");
 }
 
 void reconnect() {
@@ -169,13 +176,12 @@ void reconnect() {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
-      delay(5000);
+      Delay(5000);
     }
   }
 }
 
-void mqttListen()
-{
+void mqttListen(){
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
@@ -184,31 +190,6 @@ void mqttListen()
   mqttClient.subscribe(topic.c_str());
   mqttClient.setCallback(callback);
 
-}
-
-void postvalue(String name, float value, String unit)
-{
-  WiFiClient wificlient; // Used for sending http to url
-  HTTPClient http;
-
-  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name + "&value=" + String(value) + "&unit=" + unit;
-  http.begin(wificlient, url);
-  int httpResponseCode = http.GET();
-  String payload = "{}";
-
-  if (httpResponseCode > 0)
-  {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    payload = http.getString();
-  }
-  else
-  {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  // Free resources
-  http.end();
 }
 
 String postlog(String msg)
@@ -241,6 +222,15 @@ String postlog(String msg)
   return payload;
 }
 
+// void steerRight(){
+//   steering.Reverse();
+
+// }
+// void steerLeft(){
+
+//   steering.Start();
+// }
+
 void setup()
 {
 
@@ -249,29 +239,37 @@ void setup()
   Serial.print("Hello from ");
   Serial.println(cpuid);
 
+  
   IPAddress gateway(192, 168, 2, 1);
   IPAddress subnet(255, 255, 0, 0);
   IPAddress primaryDNS(8, 8, 8, 8);
   IPAddress secondaryDNS(8, 8, 4, 4); // optional
 
+
   WiFi.mode(WIFI_STA);
-  if (cpuid.startsWith("64b7084cff5c"))
+ if (cpuid.startsWith("64b7084cff5c"))
   {
     IPAddress local_IP(192, 168, 2, 103);
-    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-  }
-  else
-  {
+     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
 
-    IPAddress local_IP(192, 168, 2, 104);
-    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
+  else{
+
+     IPAddress local_IP(192, 168, 2, 104);
+     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
+
+  }
+ 
 
   WiFi.begin(ssid, password);
 
+  Serial.println("");
+
+  // Wait for connection
+  // Connection-info in secrets.h
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(500);
+    Delay(500);
     Serial.print(".");
   }
 
@@ -300,24 +298,30 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-float GetCleanDist(std::vector<float> &vec)
+void driveStrategy()
 {
+  drive.Forward(1);
+  Delay(5000);
+}
+
+float GetCleanDist(std::vector<float> &vec){
   float res = 0.0;
   for (int i = 0; i < 3; i++)
   {
     res += vec.at(i);
   }
   return res / 3;
+  
 }
 
-bool objectInRange(std::vector<float> &vec, int rng )
-{
+bool objectInRange(std::vector<float> &vec) {
   float dist = GetCleanDist(vec);
+
   return dist > 0 && dist < rng;
+
 }
 
-void updateDistSensors()
-{
+void updateDistSensors(){
   float fD = frontdistance.GetDistance();
   float reD = reardistance.GetDistance();
   float riD = rightdistance.GetDistance();
@@ -328,35 +332,29 @@ void updateDistSensors()
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
-void masterStrat(int sideoffset)
-{
-  if (!objectInRange(frontDist, 30))
-  {
-    drive.Forward(1);
-    light.HeadLight();
+
+
+void masterStrat() {
+  if(objectInRange(frontDist) && objectInRange(rearDist)){
+    drive.Stop();
+    light.Test();
   }
-  else
-  {   
-     if (!objectInRange(rearDist, 30)){ 
+  else if (objectInRange(frontDist)){
     drive.Reverse(1);
-    light.BrakeLight();
-     }
-     else{
-      drive.Stop();
-     }
+    light.Off();
+
+  } else { 
+    drive.Forward(1);
+    light.Off();
   }
 
-  steer.Stop();
-
-  if (objectInRange(leftDist,sideoffset))
-  {
+  if (objectInRange(leftDist)) { 
     steer.Right();
-  }
-  if (objectInRange(rightDist, sideoffset))
-  {
+  } else if (objectInRange(rightDist)) { 
     steer.Left();
+  }else{
+    steer.Stop();
   }
-    
 }
 
 void loop()
@@ -364,19 +362,19 @@ void loop()
   
   idx = loopcount % 3;
   updateDistSensors();
-  if (idx == 0)
-  {
-    masterStrat(45);
-    mqttmeasurements();
+  if(idx == 0){
+    masterStrat();
   }
 
  
   if (!client.connected()) {
     reconnect();
-  }else{
-    Serial.print(client.state());
   }
   client.loop();
-  
-  delay(10);
+
+  mqttmeasurements();
+  mqttlog("loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
+
+  Delay(10);
+  loopcount++;
 }
