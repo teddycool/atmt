@@ -70,6 +70,10 @@ String topic;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+void Delay(int ms){
+  vTaskDelay(pdMS_TO_TICKS(ms));
+}
+
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -169,7 +173,7 @@ void reconnect() {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
-      delay(5000);
+      Delay(5000);
     }
   }
 }
@@ -271,7 +275,7 @@ void setup()
 
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(500);
+    Delay(500);
     Serial.print(".");
   }
 
@@ -378,5 +382,5 @@ void loop()
   }
   client.loop();
   
-  delay(10);
+  Delay(10);
 }
