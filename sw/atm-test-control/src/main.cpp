@@ -16,6 +16,8 @@
 #include "light.h"
 #include "dynamics.h"
 #include "secrets.h"
+#include "strategy.h"
+
 
 // Define pin-name and GPIO#. Pin # are fixed but can ofcourse be named differently
 // Motor
@@ -57,7 +59,7 @@ std::vector<float> frontDist(3, 100);
 std::vector<float> rearDist(3, 100);
 std::vector<float> leftDist(3, 100);
 std::vector<float> rightDist(3, 100);
-
+Strategy strategy(steering, drive);
 int loopcount = 0;
 int idx = 0;
 
@@ -300,22 +302,6 @@ void setup()
   Serial.println("Setup is done!");
 }
 
-float GetCleanDist(std::vector<float> &vec)
-{
-  float res = 0.0;
-  for (int i = 0; i < 3; i++)
-  {
-    res += vec.at(i);
-  }
-  return res / 3;
-}
-
-bool objectInRange(std::vector<float> &vec, int rng )
-{
-  float dist = GetCleanDist(vec);
-  return dist > 0 && dist < rng;
-}
-
 void updateDistSensors()
 {
   float fD = frontdistance.GetDistance();
@@ -328,48 +314,13 @@ void updateDistSensors()
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
-void masterStrat(int sideoffset)
-{
-  if (!objectInRange(frontDist, 30))
-  {
-    drive.Forward(1);
-    light.HeadLight();
-  }
-  else
-  {   
-     if (!objectInRange(rearDist, 30)){ 
-    drive.Reverse(1);
-    light.BrakeLight();
-     }
-     else{
-      drive.Stop();
-     }
-  }
-
-  steer.Stop();
-
-  if (objectInRange(leftDist,sideoffset))
-  {
-    steer.Right();
-  }
-  if (objectInRange(rightDist, sideoffset))
-  {
-    steer.Left();
-  }
-    
-}
-
 void loop()
 {
   
   idx = loopcount % 3;
   updateDistSensors();
-  if (idx == 0)
-  {
-    masterStrat(45);
-    mqttmeasurements();
-  }
-
+  
+  strategy.Execute(frontDist, rearDist, leftDist, rightDist);
  
   if (!client.connected()) {
     reconnect();
