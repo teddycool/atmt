@@ -89,19 +89,20 @@ void mqttlog(String msg, String logType = "logging")
   mqttClient.setServer("192.168.2.2", 1883);
   mqttClient.connect(cpuid.c_str());
 
-  //String topic = cpuid +"/" + logType;
-  topic = cpuid +"/" + logType;
-  //Serial.println("mqtt cpuid: "+ cpuid);
-  //Serial.println("mqtt topic: "+ topic);
-  //Serial.println("mqtt msg: " + msg);
-  mqttClient.publish(topic.c_str(),msg.c_str());
+  // String topic = cpuid +"/" + logType;
+  topic = cpuid + "/" + logType;
+  // Serial.println("mqtt cpuid: "+ cpuid);
+  // Serial.println("mqtt topic: "+ topic);
+  // Serial.println("mqtt msg: " + msg);
+  mqttClient.publish(topic.c_str(), msg.c_str());
 }
 
-void mqttmeasurements(){
-  //String topic = "measurements";
+void mqttmeasurements()
+{
+  // String topic = "measurements";
   topic = "measurements";
   // Create the JSON document
-  //DynamicJsonDocument doc(1024);
+  // DynamicJsonDocument doc(1024);
   doc["ID"] = cpuid;
 
   doc["T"] = int(millis());
@@ -131,12 +132,12 @@ void mqttmeasurements(){
      */
 
   // Serialize JSON to string
-  //char payload[300];
+  // char payload[300];
   serializeJson(doc, payload, sizeof(payload));
 
-  Serial.println("payload: "+String(payload));
+  Serial.println("payload: " + String(payload));
 
-  mqttlog(payload,topic);
+  mqttlog(payload, topic);
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -156,7 +157,6 @@ void mqttListen()
   String topic = cpuid + "/" + "remote";
   mqttClient.subscribe(topic.c_str());
   mqttClient.setCallback(callback);
-
 }
 
 void postvalue(String name, float value, String unit)
@@ -278,9 +278,8 @@ float GetCleanDist(std::vector<float> &vec)
   return res / 3;
 }
 
-bool objectInRange(std::vector<float> &vec, int rng )
+bool objectInRange(float dist, int rng)
 {
-  float dist = GetCleanDist(vec);
   return dist > 2 && dist < rng;
 }
 
@@ -296,46 +295,80 @@ void updateDistSensors()
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
+void steerRight(bool forward)
+{
+  if (forward)
+  {
+    steer.Right();
+  }
+  else
+  {
+    steer.Left();
+  }
+}
+
+void steerLeft(bool forward)
+{
+  if (forward)
+  {
+    steer.Left();
+  }
+  else
+  {
+    steer.Right();
+  }
+}
+
 void masterStrat(int sideoffset)
 {
   bool forward = true;
-  if (!objectInRange(frontDist, 30))
+
+  float cleanDistFront = GetCleanDist(frontDist);
+  float cleanDistRear = GetCleanDist(rearDist);
+  float cleanDistLeft = GetCleanDist(leftDist);
+  float cleanDistRight = GetCleanDist(rightDist);
+
+  if (!objectInRange(cleanDistFront, 30))
   {
     drive.Forward(1);
     light.HeadLight();
   }
   else
-  {   
-     if (!objectInRange(rearDist, 30)){ 
-    forward = false; // This is for steering to invert when reversing.
-    drive.Reverse(1);
-    light.BrakeLight();
-     }
-     else{
+  {
+    if (!objectInRange(cleanDistRear, 30))
+    {
+      forward = false; // This is for steering to invert when reversing.
+      drive.Reverse(1);
+      light.BrakeLight();
+    }
+    else
+    {
       drive.Stop();
-     }
+    }
   }
 
   steer.Stop();
 
-  if (objectInRange(leftDist,sideoffset))
+  // If both sides in range, steer toward the one furthest away
+  if (objectInRange(cleanDistLeft, sideoffset) && objectInRange(cleanDistRight, sideoffset))
   {
-    if(forward){
-      steer.Right();
-    }else {
-      steer.Left();
+    if (cleanDistLeft > cleanDistRight)
+    {
+      steerLeft(forward);
     }
-    
-  }
-  if (objectInRange(rightDist, sideoffset))
-  {
-    if(forward){
-      steer.Left();
-    }else {
-      steer.Right();
+    else
+    {
+      steerRight(forward);
     }
   }
-    
+  if (objectInRange(cleanDistLeft, sideoffset))
+  {
+    steerRight(forward);
+  }
+  if (objectInRange(cleanDistRight, sideoffset))
+  {
+    steerLeft(forward);
+  }
 }
 
 void loop()
@@ -348,8 +381,8 @@ void loop()
     mqttmeasurements();
   }
 
-  //drive.Stop();
-  //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
+  // drive.Stop();
+  // mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
   delay(10);
   loopcount++;
