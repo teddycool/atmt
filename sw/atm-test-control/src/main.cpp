@@ -365,16 +365,15 @@ void loop()
     masterStrat();
   }
 */
-  mqttmeasurements();
 
   if (!client.connected()) {
     reconnect();
-  }else{
-    Serial.print(client.state());
   }
   client.loop();
   drive.Stop();
-  //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
+  
+  mqttmeasurements();
+  mqttlog("loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
   Delay(500);
   loopcount++;
