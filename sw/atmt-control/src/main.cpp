@@ -66,6 +66,10 @@ char payload[300];
 DynamicJsonDocument doc(2048);
 String topic;
 
+void Delay(int ms){
+  vTaskDelay(pdMS_TO_TICKS(ms));
+}
+
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -139,12 +143,38 @@ void mqttmeasurements(){
   mqttlog(payload,topic);
 }
 
-void callback(char *topic, byte *payload, unsigned int length)
-{
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  String msg = "";
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+    msg+=(char)payload[i];
+  }
+  Serial.println();
+  mqttlog(msg,"echo");
+}
 
-  String msg = "Received: ";
-  mqttlog(msg, "remote_echo");
-  // Handle incoming message
+void reconnect() {
+  // Loop until reconnected
+  while (!client.connected()) {
+    Serial.print(client.state());
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (client.connect(cpuid.c_str())) {
+      Serial.println("connected");
+      // Subscribe to a topic
+      topic = cpuid + "/" + "remote" ;
+      Serial.println("Listening to topic: "+topic); 
+      client.subscribe(topic.c_str());
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      Delay(5000);
+    }
+  }
 }
 
 void mqttListen()
@@ -244,7 +274,7 @@ void setup()
 
   while (WiFi.status() != WL_CONNECTED)
   {
-    delay(500);
+    Delay(500);
     Serial.print(".");
   }
 
@@ -348,9 +378,15 @@ void loop()
     mqttmeasurements();
   }
 
-  //drive.Stop();
-  //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
+ 
+  if (!client.connected()) {
+    reconnect();
+  }else{
+    Serial.print(client.state());
+  }
+  client.loop();
+  
+  Delay(10);
 
-  delay(10);
   loopcount++;
 }
