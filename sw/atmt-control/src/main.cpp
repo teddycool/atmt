@@ -298,6 +298,7 @@ void updateDistSensors()
 
 void masterStrat(int sideoffset)
 {
+  bool forward = true;
   if (!objectInRange(frontDist, 30))
   {
     drive.Forward(1);
@@ -306,6 +307,7 @@ void masterStrat(int sideoffset)
   else
   {   
      if (!objectInRange(rearDist, 30)){ 
+    forward = false; // This is for steering to invert when reversing.
     drive.Reverse(1);
     light.BrakeLight();
      }
@@ -318,11 +320,20 @@ void masterStrat(int sideoffset)
 
   if (objectInRange(leftDist,sideoffset))
   {
-    steer.Right();
+    if(forward){
+      steer.Right();
+    }else {
+      steer.Left();
+    }
+    
   }
   if (objectInRange(rightDist, sideoffset))
   {
-    steer.Left();
+    if(forward){
+      steer.Left();
+    }else {
+      steer.Right();
+    }
   }
     
 }
