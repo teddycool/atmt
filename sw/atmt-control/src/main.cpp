@@ -66,14 +66,6 @@ char payload[300];
 DynamicJsonDocument doc(2048);
 String topic;
 
-// for mqtt listening
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-void Delay(int ms){
-  vTaskDelay(pdMS_TO_TICKS(ms));
-}
-
 // Function for reading uniuque chipid, to keep track of logs
 String uids()
 {
@@ -142,46 +134,21 @@ void mqttmeasurements(){
   //char payload[300];
   serializeJson(doc, payload, sizeof(payload));
 
-  //Serial.println("payload: "+String(payload));
+  Serial.println("payload: "+String(payload));
 
   mqttlog(payload,topic);
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  String msg = "";
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-    msg+=(char)payload[i];
-  }
-  Serial.println();
-  mqttlog(msg,"echo");
+void callback(char *topic, byte *payload, unsigned int length)
+{
+
+  String msg = "Received: ";
+  mqttlog(msg, "remote_echo");
+  // Handle incoming message
 }
 
-void reconnect() {
-  // Loop until reconnected
-  while (!client.connected()) {
-    Serial.print(client.state());
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (client.connect(cpuid.c_str())) {
-      Serial.println("connected");
-      // Subscribe to a topic
-      topic = cpuid + "/" + "remote" ;
-      Serial.println("Listening to topic: "+topic); 
-      client.subscribe(topic.c_str());
-    } else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      Delay(5000);
-    }
-  }
-}
-
-void mqttListen(){
+void mqttListen()
+{
   WiFiClient wificlient;
   PubSubClient mqttClient(wificlient);
   mqttClient.setServer("192.168.2.2", 1883);
@@ -190,6 +157,31 @@ void mqttListen(){
   mqttClient.subscribe(topic.c_str());
   mqttClient.setCallback(callback);
 
+}
+
+void postvalue(String name, float value, String unit)
+{
+  WiFiClient wificlient; // Used for sending http to url
+  HTTPClient http;
+
+  String url = "http://192.168.2.2/post_value.php?chipid=" + cpuid + "&name=" + name + "&value=" + String(value) + "&unit=" + unit;
+  http.begin(wificlient, url);
+  int httpResponseCode = http.GET();
+  String payload = "{}";
+
+  if (httpResponseCode > 0)
+  {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+    payload = http.getString();
+  }
+  else
+  {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  // Free resources
+  http.end();
 }
 
 String postlog(String msg)
@@ -222,15 +214,6 @@ String postlog(String msg)
   return payload;
 }
 
-// void steerRight(){
-//   steering.Reverse();
-
-// }
-// void steerLeft(){
-
-//   steering.Start();
-// }
-
 void setup()
 {
 
@@ -239,37 +222,29 @@ void setup()
   Serial.print("Hello from ");
   Serial.println(cpuid);
 
-  
   IPAddress gateway(192, 168, 2, 1);
   IPAddress subnet(255, 255, 0, 0);
   IPAddress primaryDNS(8, 8, 8, 8);
   IPAddress secondaryDNS(8, 8, 4, 4); // optional
 
-
   WiFi.mode(WIFI_STA);
- if (cpuid.startsWith("64b7084cff5c"))
+  if (cpuid.startsWith("64b7084cff5c"))
   {
     IPAddress local_IP(192, 168, 2, 103);
-     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
-  else{
+  else
+  {
 
-     IPAddress local_IP(192, 168, 2, 104);
-     WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
-
+    IPAddress local_IP(192, 168, 2, 104);
+    WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS);
   }
- 
 
   WiFi.begin(ssid, password);
 
-  Serial.println("");
-
-  // Wait for connection
-  // Connection-info in secrets.h
   while (WiFi.status() != WL_CONNECTED)
   {
-    Delay(500);
+    delay(500);
     Serial.print(".");
   }
 
@@ -290,38 +265,27 @@ void setup()
   light.SetUp();
   dynamics.SetUp();
 
-    // Set MQTT server details
-  client.setServer("192.168.2.2", 1883);
-  // Callback function to handle incoming messages
-  client.setCallback(callback);
-
   Serial.println("Setup is done!");
 }
 
-void driveStrategy()
+float GetCleanDist(std::vector<float> &vec)
 {
-  drive.Forward(1);
-  Delay(5000);
-}
-
-float GetCleanDist(std::vector<float> &vec){
   float res = 0.0;
   for (int i = 0; i < 3; i++)
   {
     res += vec.at(i);
   }
   return res / 3;
-  
 }
 
-bool objectInRange(std::vector<float> &vec) {
+bool objectInRange(std::vector<float> &vec, int rng )
+{
   float dist = GetCleanDist(vec);
-
-  return dist > 0 && dist < rng;
-
+  return dist > 2 && dist < rng;
 }
 
-void updateDistSensors(){
+void updateDistSensors()
+{
   float fD = frontdistance.GetDistance();
   float reD = reardistance.GetDistance();
   float riD = rightdistance.GetDistance();
@@ -332,49 +296,61 @@ void updateDistSensors(){
   leftDist[idx] = lD > 100.0 ? 100.0 : lD;
 }
 
-
-
-void masterStrat() {
-  if(objectInRange(frontDist) && objectInRange(rearDist)){
-    drive.Stop();
-    light.Test();
-  }
-  else if (objectInRange(frontDist)){
-    drive.Reverse(1);
-    light.Off();
-
-  } else { 
+void masterStrat(int sideoffset)
+{
+  bool forward = true;
+  if (!objectInRange(frontDist, 30))
+  {
     drive.Forward(1);
-    light.Off();
+    light.HeadLight();
+  }
+  else
+  {   
+     if (!objectInRange(rearDist, 30)){ 
+    forward = false; // This is for steering to invert when reversing.
+    drive.Reverse(1);
+    light.BrakeLight();
+     }
+     else{
+      drive.Stop();
+     }
   }
 
-  if (objectInRange(leftDist)) { 
-    steer.Right();
-  } else if (objectInRange(rightDist)) { 
-    steer.Left();
-  }else{
-    steer.Stop();
+  steer.Stop();
+
+  if (objectInRange(leftDist,sideoffset))
+  {
+    if(forward){
+      steer.Right();
+    }else {
+      steer.Left();
+    }
+    
   }
+  if (objectInRange(rightDist, sideoffset))
+  {
+    if(forward){
+      steer.Left();
+    }else {
+      steer.Right();
+    }
+  }
+    
 }
 
 void loop()
 {
-  
   idx = loopcount % 3;
   updateDistSensors();
-  if(idx == 0){
-    masterStrat();
+  if (idx == 0)
+  {
+    masterStrat(45);
+    mqttmeasurements();
   }
 
- 
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
+  //drive.Stop();
+  //mqttlog("Drive Stop loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
 
-  mqttmeasurements();
-  mqttlog("loop nr. "+String(loopcount)+" time elapsed since start: " + String(millis())+" ms.");
-
-  Delay(10);
+  delay(10);
   loopcount++;
 }
