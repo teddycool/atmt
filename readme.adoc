@@ -1,4 +1,4 @@
-# An Autonomous Toy Monster Truck readme
+# An Autonomous Toy Monster Truck
 
 ## Project overview
 The goal here is to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
@@ -8,9 +8,7 @@ The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distanc
 This repo is now updated and will be used as a start for the 'Nöörd-Team' at ScaniaHack May 16th and 17th 2024. This repo will contain everything needed in this project and also try to explain the progress and eventually the results.
 
 
-link:getstarted.adoc[How to get started for ScaniaHack]
-
-link:scaniahack.adoc[Scania Hack setup]
+link:getstarted.adoc[How to get started]
 
 ### Other uses:
 However, it is possible to use my PCB-design or the schematics and build a sort of control-board for the motors and then have the actual control-system on an other device, such as a raspberry-pi.

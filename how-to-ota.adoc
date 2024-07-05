@@ -1,7 +1,7 @@
 # How to ota a natmt
 
 ## Build the software
-Build the software and be sure to have the ota capabilities present since thes will be used the next time.
+Build the software and be sure to have the ota capabilities present since these will be used the next time.
 
 Look at the template file. More info to come...
 

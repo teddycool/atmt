@@ -10,7 +10,7 @@ When vscode is up and running, select extensions and search for platformio. This
 
 We are using C++ and installing some extensions for that is a good idea. 
 
-At ScaniaHack will will probably use PHP, Python and other stuff as well, and vscode is really good for that too.
+You will probably use PHP, Python and other stuff as well, and vscode is really good for that too.
 
 Now, when the development environment is installed, clone the github repo.
 
@@ -25,7 +25,7 @@ Now, when the development environment is installed, clone the github repo.
 
 ## Open the test-project in VsCode
 
-Now, start VsCode and open the folder named .../sw/atm-test-control in vscode. 
+Now, start VsCode and open the folder named .../sw/atm-control in vscode. 
 
 My guess is that the problems starts here....
 
