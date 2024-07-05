@@ -11,7 +11,13 @@
 *.sln.docstates
 *.drawio.bkp
 .vscode/*
-# secrets.h
+secrets.h
+
+#Kicad backups and work files
+hw/pcb-kicad/atmt-kcad/atmt-kcad-backups/*.zip
+hw/pcb-kicad/atmt-kcad/#auto_saved_files#
+hw/pcb-kicad/atmt-kcad/~atmt-kcad.kicad_pcb.lck
+hw/pcb-kicad/atmt-kcad/~atmt-kcad.kicad_sch.lck
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
