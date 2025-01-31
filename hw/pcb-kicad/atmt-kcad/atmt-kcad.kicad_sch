@@ -4176,6 +4176,16 @@
 	)
 	(wire
 		(pts
+			(xy 199.39 91.44) (xy 207.01 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1ebd47fd-b072-43cb-b0e1-3174240869b9")
+	)
+	(wire
+		(pts
 			(xy 369.57 115.57) (xy 369.57 118.11)
 		)
 		(stroke
@@ -5588,7 +5598,7 @@
 	)
 	(text "Motor control"
 		(exclude_from_sim no)
-		(at 347.726 140.97 0)
+		(at 341.884 137.922 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -5608,7 +5618,7 @@
 	)
 	(text "Programming and debug"
 		(exclude_from_sim no)
-		(at 93.726 182.626 0)
+		(at 73.152 184.912 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -5658,7 +5668,7 @@
 	)
 	(text "Power-supply"
 		(exclude_from_sim no)
-		(at 99.06 80.01 0)
+		(at 99.568 80.01 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -5668,7 +5678,7 @@
 	)
 	(text "Ultrasonic sensors"
 		(exclude_from_sim no)
-		(at 104.14 272.542 0)
+		(at 116.84 258.572 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -5895,6 +5905,17 @@
 			(justify left bottom)
 		)
 		(uuid "3e25e641-c55e-49a2-a332-8e6c989cbce9")
+	)
+	(label "ADC"
+		(at 199.39 91.44 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "4181a268-b225-4834-aa04-4b6651645e5b")
 	)
 	(label "Echo1"
 		(at 137.16 214.63 0)
