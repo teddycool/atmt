@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <AsyncElegantOTA.h>
+#include <ElegantOTA.h>
 #include <HTTPClient.h>
 #include <ArduinoUniqueID.h>
 #include <PubSubClient.h>
@@ -16,7 +16,7 @@
 #include "light.h"
 #include "dynamics.h"
 #include "secrets.h"
-#inlude "atmio.h"
+#include "atmio.h"
 
 AsyncWebServer server(80);
 

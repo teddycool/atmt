@@ -1,6 +1,0 @@
-# The test-software
-
-
-This is the bare minimum for using OTA on ESP32.
-
-More info: https://randomnerdtutorials.com/esp32-ota-over-the-air-arduino/
