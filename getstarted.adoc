@@ -2,7 +2,7 @@
 
 ## Development environment
 
-You will Python3 and some kind of git-client.
+You will need Python3 and some kind of git-client.
 
 The main software is Visual Studio Code, install it for your platform from https://code.visualstudio.com/
 
@@ -10,27 +10,28 @@ When vscode is up and running, select extensions and search for platformio. This
 
 We are using C++ and installing some extensions for that is a good idea. 
 
-You will probably use PHP, Python and other stuff as well, and vscode is really good for that too.
+We will probably use PHP, Python and other stuff as well, and vscode is really good for that too.
 
 Now, when the development environment is installed, clone the github repo.
 
-## How to clone
+## How to start working with the repo
 
 * Create a github-account if you don't allready have one
+* Navigate to https://github.com/teddycool/atmt
+* Click the fork-button to get your own copy of this repo. Use the default and fork only the main-branch.
+* Now you have your own copy of the repo in your accounbt and you can start working with it.
 * Go the the local directory for your projects and start a terminal
-* run "git clone https://github.com/teddycool/atmt.git"  to get all the files
-* You can now create a new local branch to work on: git checkout -b my-new-branch
-* Then use a pull-request to show and discuss the changes you made before merging to the main-branch. More info here: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
+* Run "git clone and the  path to your fork to get all the files
+* For your own coding you might want to create a new branch and work in that.
+* When you are done with your changes, commit them to your main and push them to your fork on github.
+* Then use a pull-request from github to show and discuss the changes you made with the rest of the team. More info here: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
 
 
-## Open the test-project in VsCode
+## Open the project in VsCode
 
-Now, start VsCode and open the folder named .../sw/atm-control in vscode. 
+Now, start VsCode and open the folder named .../sw in vscode. 
 
 My guess is that the problems starts here....
 
 But hopefully it is possible to build the project and if you have an esp32 dev-board ready it might even be possible to download it.
 
-The atm-test-control project demostrates how to connect to wifi, read from all the sensors, run the motors, post simple logprints to our server and be prepared for OTA. It will be continuosly updated until the ScaniaHack begins.
-
-It is a very simple game-loop type of thing basically for testing the hardware and with no vehicle control logic at all.
