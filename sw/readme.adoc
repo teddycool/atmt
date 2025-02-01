@@ -1,8 +1,0 @@
-# The control-software
-
-
-This is the control software.
-
-Work in progress...
-
-

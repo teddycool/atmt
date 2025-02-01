@@ -1,5 +1,42 @@
 # An Autonomous Toy Monster Truck
 
+This project is undergoing a huge change and will be updated with new information and code. The project is now being prepared for ScaniaHack 2025 and use the progress we made in 2024 as a starting point.
+
+The old branches are still available and can be used for reference but the main branch will be uppdated and restructured.
+
+The main branch is now protected and the only way to get changes in is to make a pull-request from your own fork. I also removed the old access-rights to the repo and will add them again if needed.
+
+## How to contribute?
+
+* Fork this repo from main and do your thing in this fork on your own github-account 
+* When done, make a pull-request back to main and describe your changes in the pull-request
+* Try to keep one feature or bug-fix per pull-request to make the merging easier
+* If you have any questions or need help, just ask me by pm, email, IRL or in the pull-request and I will try to help you out.
+
+#Note: when working in vscode with platformio you need to open the \sw subfolder from where you have cloned the repo, and then you can work, build and download to esp from there.#
+
+## How to get started
+
+link:getstarted.adoc[How to get started]
+
+## Repo layout:
+
+All sections are undergoing a change and will be updated with new information and code. 
+
+* doc: documentation and images, 
+** A workdescription for the conversion
+** A proposal for how to setup the work at ScaniaHack
+* hw: hardware including:
+** PCB layout and all the schematics in KiCAD format. 
+** References to used components etc. 
+** CAD models and 3d printables for some add-ons to the chassi.
+* sw: the main-branch and this is the VsCode project you should open in order to work with the software.
+* www: software for the backend web-server, like
+** post log script
+** view log script
+
+
+
 ## Project overview
 The goal here is to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
 
@@ -8,41 +45,22 @@ The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distanc
 This repo is now updated and will be used as a start for the 'Nöörd-Team' at ScaniaHack May 16th and 17th 2024. This repo will contain everything needed in this project and also try to explain the progress and eventually the results.
 
 
-link:getstarted.adoc[How to get started]
-
 ### Other uses:
 However, it is possible to use my PCB-design or the schematics and build a sort of control-board for the motors and then have the actual control-system on an other device, such as a raspberry-pi.
 
 Each distance sensor uses 2 ios from the ESP32 and these can of course be used by other sensors as well but pay attention to the power-supply for these since they use power directly from the batteries. 
 
-## Repo layout:
 
-* doc: documentation and images, 
-** A workdescription for the conversion
-** A proposal for how to setup the work at ScaniaHack
-* hw: hardware including:
-** PCB layout and all the schematics. 
-** References to used components etc. 
-** CAD models and 3d printables for some add-ons to the chassi.
-* sw: all software, not that much yet but soame starterss (each folder is it's own VsCode project):
-** a testproject (atm-test-control) to run all sensors and controls etc (basically to test that the hardware works as intended)
-** a place-holder for the real software to be developed (atm-real-control)
-* www: software for the backend web-server, like
-** post log script
-** view log script
+## Good links to get started with ESP32
 
-
-## Good links to get started
-
-https://randomnerdtutorials.com
-
-https://www.google.com/search?q=esp32+how+too
-
-https://blog.espressif.com/
+* link:https://randomnerdtutorials.com[Random Nerd Tutorials]
+* link:https://www.espressif.com/en/products/socs/esp32/resources[Espressif Resources]
+* link:https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html[ESP-IDF Programming Guide]
+* link:https://www.arduino.cc/en/Guide/ESP32[Arduino Guide for ESP32]
 
 
 
-## Errata (important stuff)
+## Errata HW version2 (important stuff)
 
 * To keep the ESP safe on the io-side I am using rechargable batteries summing up to 3.6 volts which works just fine, but with alkalines you will probably get like 4.6 or 4.7 volts with fresh batteries which might damage the ESP32 io. Don't use those... 
 * In the schematics I used a 1N4148 diode for reversed polarity protection but this was NOT a good choice. This can be left out completely or replaced by a schottky type of diode with a low voltage-drop.
