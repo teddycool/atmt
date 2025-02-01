@@ -1,7 +1,7 @@
 // #include "FreeRTOS.h"
 #include "setget.h"
-#include <FreeRTOS.h>
-#include <semphr.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 // Define a struct to encapsulate each variable
 typedef struct
