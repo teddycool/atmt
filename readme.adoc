@@ -4,14 +4,16 @@ This project is undergoing a huge change and will be updated with new informatio
 
 The old branches are still available and can be used for reference but the main branch will be uppdated and restructured.
 
+The main branch is now protected and the only way to get changes in is to make a pull-request from your own fork. I also removed the old access-rights to the repo and will add them again if needed.
+
 ## How to contribute? ##
 
 * Fork this repo from main and do your thing in this fork on your own github-account 
 * When done, make a pull-request back to main and describe your changes in the pull-request
 * Try to keep one feature or bug-fix per pull-request to make the merging easier
-* If you have any questions or need help, just ask me IRL or in the pull-request and I will try to help you out.
+* If you have any questions or need help, just ask me by pm, email, IRL or in the pull-request and I will try to help you out.
 
-Note: when working in vscode with platformio you need to open the \sw subfolder from where you have cloned the repo, and then you can work from there. 
+#Note: when working in vscode with platformio you need to open the \sw subfolder from where you have cloned the repo, and then you can work, build and download to esp from there.#
 
 ## Repo layout:
 
