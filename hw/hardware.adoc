@@ -57,3 +57,29 @@ Around 300 sek divided as:
 * L293 (mouser.se): 100
 * LP2989 (electrokit.se): 60
 * Pinheaders, smd-button, capacitors etc...
+
+## Material cost pcb HW version 3 with components (approx sek)
+
+Around 350 sek divided as:
+
+* PCB (Aisler.net):  75
+* ESP32 (mouser.se): 40
+* L293 (mouser.se): 100
+* LP2989 (electrokit.se): 60
+* Buck/boost regulator (electrokit.se): 50
+* Level converter (electrokit.se): 20
+* Pinheaders, smd-button, capacitors etc...
+
+### Sensors etc
+
+* 4*HC-SR04 (https://www.electrokit.com/avstandsmatare-ultraljud-hc-sr04-2-400cm)
+* 1*GY-521 (https://www.electrokit.com/mpu-6050-accelerometer-3-axel-gyro-monterad-pa-kort)
+* 1*GY-273 (https://www.electrokit.com/elektronisk-kompass-hmc5883l)
+* 6*cables for the sensors (https://www.electrokit.com/labsladd-4-pin-100mm)
+
+### Programming interface
+
+Something like this: https://www.electrokit.com/beefy-3-ftdi-breakout with some cables like this to fit the connector on the pcb: https://www.electrokit.com/labbsladd-40-pin-30cm-hona/hane
+
+
+
