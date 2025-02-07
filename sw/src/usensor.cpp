@@ -12,17 +12,38 @@ struct sensors
     VarNames NAME;
 };
 
-volatile sensors sensor[10];
+volatile sensors sensor[MAX_SENSORS];
 
 volatile int num_sensors = 0;
 volatile int current_sensor = 0;
 volatile bool pulse_active = false; // indicate a pulse has been sent and no echo yet received.
 volatile long startTime;
 
-Usensor::Usensor()
+void echoInterrupt()
 {
-    // start the task that regularly will trigger the opened sensors
-    xTaskCreate(TriggerTask, "testsetup", 2000, NULL, 1, NULL);
+    int i = current_sensor;
+    if (digitalRead(sensor[current_sensor].ECHO) == HIGH)
+    {
+        Serial.print(" S");
+        Serial.print(current_sensor);
+        Serial.println("u ");
+        pulse_active = true;
+
+        // The echo pin went from LOW to HIGH: start timing
+        startTime = micros();
+    }
+    else
+    {
+         Serial.print(" S");
+        Serial.print(current_sensor);
+        Serial.println("d ");
+        //long tmp = micros() - startTime ;
+        // The echo pin went from HIGH to LOW: stop timing and calculate distance
+        pulse_active = false;
+        long travelTime = micros() - startTime; // need to make this wrap around safe by the int - uint trick
+        // distance[i] = travelTime / 29 / 2;
+        globalVar_set(sensor[current_sensor].NAME,travelTime / 29 / 2);
+    }
 }
 
 static void TriggerTask(void *params)
@@ -35,6 +56,7 @@ static void TriggerTask(void *params)
 
     for (;;)
     {
+        Serial.print(">");
         if (num_sensors > 0)
             if (pulse_active)
                 vTaskDelay(pdMS_TO_TICKS(50)); // we have not yet reveived an echo, wait one more period, then go anyway
@@ -60,33 +82,22 @@ static void TriggerTask(void *params)
     }
 }
 
+Usensor::Usensor()
+{
+    // start the task that regularly will trigger the opened sensors
+    xTaskCreate(TriggerTask, "testsetup", 2000, NULL, 1, NULL);
+}
+
 int Usensor::open(uint8_t trig, uint8_t echo, VarNames name)
 {
     if (num_sensors < MAX_SENSORS)
     {
+        Serial.print("+");
         sensor[current_sensor].TRIG = trig;
         sensor[current_sensor].ECHO = echo;
-        sensor[current_sensor].ECHO = name;
+        sensor[current_sensor].NAME = name;
         num_sensors++;
         return num_sensors;
     }
 }
 
-void echoInterrupt()
-{
-    int i = current_sensor;
-    if (digitalRead(sensor[current_sensor].ECHO) == HIGH)
-    {
-        pulse_active = true;
-
-        // The echo pin went from LOW to HIGH: start timing
-        startTime = micros();
-    }
-    else
-    {
-        // The echo pin went from HIGH to LOW: stop timing and calculate distance
-        pulse_active = false;
-        long travelTime = micros() - startTime; // need to make this wrap around safe by the int - uint trick
-        // distance[i] = travelTime / 29 / 2;
-    }
-}

@@ -53,8 +53,8 @@ void setup()
   ultraSound.open(TRIGGER_PIN,ECHO_PIN,rawDistFront);
   ultraSound.open(TRIGGER_PIN2,ECHO_PIN2,rawDistLeft);
   ultraSound.open(TRIGGER_PIN3,ECHO_PIN3,rawDistRight);
-  ultraSound.open(TRIGGER_PIN4,ECHO_PIN4,rawDistBack);
- 
+  Serial.print(ultraSound.open(TRIGGER_PIN4,ECHO_PIN4,rawDistBack));
+  vTaskDelay(pdMS_TO_TICKS(100));
   //----------------------------------------------------------------------------------------------------------------
 }
 
