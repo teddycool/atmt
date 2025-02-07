@@ -26,6 +26,8 @@ private:
 public: 
   //void SetUp();
   //float GetDistance();
+  //void SetUp();
+  //float GetDistance();
 };
 
 #endif
