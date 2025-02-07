@@ -2,7 +2,7 @@
 #include "setget.h"
 #include <Wire.h>
 #include <driver/ledc.h>
-#include <Adafruit_VL53L0X.h> //questionable if we should use this as it is not task safe with access to the I2C.....but for a quick test...
+//#include <Adafruit_VL53L0X.h> //questionable if we should use this as it is not task safe with access to the I2C.....but for a quick test...
 
 #define PWM
 
@@ -18,13 +18,13 @@
 #define ECHO_PIN4 18
 
 //  Laser Lidar ToF __________________________
-#define VL53L0X_REG_IDENTIFICATION_MODEL_ID 0xc0
+/*#define VL53L0X_REG_IDENTIFICATION_MODEL_ID 0xc0
 #define VL53L0X_REG_IDENTIFICATION_REVISION_ID 0xc2
 #define VL53L0X_REG_PRE_RANGE_CONFIG_VCSEL_PERIOD 0x50
 #define VL53L0X_REG_FINAL_RANGE_CONFIG_VCSEL_PERIOD 0x70
 #define VL53L0X_REG_SYSRANGE_START 0x00
 
-#define VL53L0X_ADDRESS 0x29
+#define VL53L0X_ADDRESS 0x29 */
 
 //------------------------------------
 
@@ -65,7 +65,7 @@ volatile long distance[NUM_SENSORS];
 volatile long startTime[NUM_SENSORS];
 volatile int currentSensor = 0;
 
-Adafruit_VL53L0X lox = Adafruit_VL53L0X();
+//Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 // Create vecors for the ultrasouns sensor pins
 int triggerPins[NUM_SENSORS] = {TRIGGER_PIN, TRIGGER_PIN2, TRIGGER_PIN3, TRIGGER_PIN4};
@@ -354,7 +354,7 @@ void SERVICE_Lidar_init()
 {
 
   // Check the device ID to confirm that we're talking to a VL53L0X
-  Wire.beginTransmission(VL53L0X_ADDRESS);
+  /*Wire.beginTransmission(VL53L0X_ADDRESS);
   Wire.write(VL53L0X_REG_IDENTIFICATION_MODEL_ID);
   Wire.endTransmission();
   Wire.requestFrom(VL53L0X_ADDRESS, 1);
@@ -369,7 +369,7 @@ void SERVICE_Lidar_init()
   Wire.beginTransmission(VL53L0X_ADDRESS);
   Wire.write(VL53L0X_REG_SYSRANGE_START);
   Wire.write(0x01);
-  Wire.endTransmission();
+  Wire.endTransmission();*/
 }
 
 void SERVICE_Lidar(void *pvParameters)
@@ -390,12 +390,12 @@ void SERVICE_Lidar(void *pvParameters)
     globalVar_set(rawLidarFront, distance);
     */
 
-    VL53L0X_RangingMeasurementData_t measure;
+    //VL53L0X_RangingMeasurementData_t measure;
 
     // Read the distance from the sensor
-    lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
+    //lox.rangingTest(&measure, false); // pass in 'true' to get debug data printout!
 
-    if (measure.RangeStatus != 4)
+    /*if (measure.RangeStatus != 4)
     { // phase failures have incorrect data
       // Serial.print("Distance (mm): ");
       // Serial.println(measure.RangeMilliMeter);
@@ -404,7 +404,7 @@ void SERVICE_Lidar(void *pvParameters)
     else
     {
       Serial.println(" out of range ");
-    }
+    }*/
     vTaskDelay(pdMS_TO_TICKS(20));
   }
 }
@@ -434,12 +434,12 @@ void setup()
   pinMode(ECHO_PIN, INPUT);
 
   // SERVICE_Lidar_init();
-  if (!lox.begin())
+  /*if (!lox.begin())
   {
     Serial.println(F("Failed to boot VL53L0X"));
     while (1)
       ;
-  }
+  }*/
 
   // Attach an interrupt to the echo pin
   attachInterrupt(digitalPinToInterrupt(ECHO_PIN), echoInterrupt, CHANGE);

@@ -370,3 +370,5 @@ MigrationBackup/
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+examples/.~lock.Example of different task types in RTOS on ESP32.odt#
+.gitignore

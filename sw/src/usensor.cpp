@@ -1,78 +1,92 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
-#include "usensor.h"
-#include "setget.h"
+#include <usensor.h>
+#include <setget.h>
 
-struct TaskParams
+#define MAX_SENSORS 10
+
+struct sensors
 {
     uint8_t TRIG;
     uint8_t ECHO;
-    VarNames name;
+    VarNames NAME;
 };
 
-public:
-Usensor::Usensor(uint8_t trig, uint8_t echo, VarNames name) : ECHO(echo), TRIG(trig), NAME(name)
+volatile sensors sensor[10];
+
+volatile int num_sensors = 0;
+volatile int current_sensor = 0;
+volatile bool pulse_active = false; // indicate a pulse has been sent and no echo yet received.
+volatile long startTime;
+
+Usensor::Usensor()
 {
-    // Serial.println("US pin setup...");
-    digitalWrite(TRIG, LOW);
-    pinMode(TRIG, OUTPUT);
-    pinMode(ECHO, INPUT);
-    TaskParams *params = new TaskParams{TRIG, ECHO, name};
-    xTaskCreate(TriggerTask, "testsetup", 2000, params, 1, NULL);
+    // start the task that regularly will trigger the opened sensors
+    xTaskCreate(TriggerTask, "testsetup", 2000, NULL, 1, NULL);
 }
 
-static void Usensor::TriggerTask(void *pvParameters)
+static void TriggerTask(void *params)
 {
     //  Serial.println("Distance sensor test...");
     // Initialize trigger and echo pins
-    TaskParams *params = (TaskParams *)pvParameters;
-    pinMode(params->TRIG, OUTPUT);
-    pinMode(params->ECHO, INPUT);
-    pinMode(triggerPins[i], OUTPUT);
-    pinMode(echoPins[i], INPUT);
 
     // Attach an interrupt to the echo pin
-    attachInterrupt(digitalPinToInterrupt(echoPins[i]), echoInterrupt, CHANGE);
+    // attachInterrupt(digitalPinToInterrupt(echoPins[i]), echoInterrupt, CHANGE);
 
     for (;;)
     {
-        // Send a 10 microsecond pulse to start the sensor
-        digitalWrite(params->TRIG, HIGH);
-        delayMicroseconds(10);
-        digitalWrite(params->TRIG, LOW);
+        if (num_sensors > 0)
+            if (pulse_active)
+                vTaskDelay(pdMS_TO_TICKS(50)); // we have not yet reveived an echo, wait one more period, then go anyway
+        current_sensor++;
+        if (current_sensor >= num_sensors)
+            current_sensor = 0;
+        {
+            // Initialize trigger and echo pins
+            pinMode(sensor[current_sensor].TRIG, OUTPUT);
+            pinMode(sensor[current_sensor].ECHO, INPUT);
 
-        // Wait for 100 ms before polling the next sensor
-        vTaskDelay(pdMS_TO_TICKS(100));
+            // Attach an interrupt to the echo pin
+            attachInterrupt(digitalPinToInterrupt(sensor[current_sensor].ECHO), echoInterrupt, CHANGE);
+
+            // Send a 10 microsecond pulse to start the sensor
+            pulse_active = true;
+            digitalWrite(sensor[current_sensor].TRIG, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(sensor[current_sensor].TRIG, LOW);
+        }
+        // Wait for 50 ms before polling the next sensor
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+}
+
+int Usensor::open(uint8_t trig, uint8_t echo, VarNames name)
+{
+    if (num_sensors < MAX_SENSORS)
+    {
+        sensor[current_sensor].TRIG = trig;
+        sensor[current_sensor].ECHO = echo;
+        sensor[current_sensor].ECHO = name;
+        num_sensors++;
+        return num_sensors;
     }
 }
 
 void echoInterrupt()
 {
-    int i = currentSensor;
-    if (digitalRead(echoPins[i]) == HIGH)
+    int i = current_sensor;
+    if (digitalRead(sensor[current_sensor].ECHO) == HIGH)
     {
+        pulse_active = true;
+
         // The echo pin went from LOW to HIGH: start timing
-        startTime[i] = micros();
+        startTime = micros();
     }
     else
     {
         // The echo pin went from HIGH to LOW: stop timing and calculate distance
-        long travelTime = micros() - startTime[i];
-        switch (i)
-        {
-        case 0:
-            globalVar_set(rawDistFront, travelTime / 29 / 2);
-            break;
-        case 1:
-            globalVar_set(rawDistRight, travelTime / 29 / 2);
-            break;
-        case 2:
-            globalVar_set(rawDistLeft, travelTime / 29 / 2);
-            break;
-        case 3:
-            globalVar_set(rawDistBack, travelTime / 29 / 2);
-            break;
-        }
+        pulse_active = false;
+        long travelTime = micros() - startTime; // need to make this wrap around safe by the int - uint trick
         // distance[i] = travelTime / 29 / 2;
     }
 }

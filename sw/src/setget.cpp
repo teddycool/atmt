@@ -2,6 +2,7 @@
 #include "setget.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
+#include <freertos/task.h>
 
 // Define a struct to encapsulate each variable
 typedef struct
