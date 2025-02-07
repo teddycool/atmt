@@ -4,7 +4,13 @@ This project is undergoing a huge change and will be updated with new informatio
 
 The old branches are still available and can be used for reference but the main branch will be uppdated and restructured.
 
-The main branch is now protected and the only way to get changes in is to make a pull-request from your own fork. I also removed the old access-rights to the repo and will add them again if needed.
+The main branch is now protected and the only way to get changes in to it, is to make a pull-request from your own fork. I also removed the old access-rights to the repo but will add them again if needed.
+
+## Project overview
+The goal here is to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
+
+The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distance-sensors and acc/gyro/compass. This design was made to be simple and easy to both understand and replicate. I hope it will be a source of inspiration and give ideas for improvements. 
+
 
 ## How to contribute?
 
@@ -26,30 +32,18 @@ All sections are undergoing a change and will be updated with new information an
 * doc: documentation and images, 
 ** A workdescription for the conversion
 ** A proposal for how to setup the work at ScaniaHack
-* hw: hardware including:
+* hw: the toy-truck hardware including:
 ** PCB layout and all the schematics in KiCAD format. 
 ** References to used components etc. 
 ** CAD models and 3d printables for some add-ons to the chassi.
-* sw: the main-branch and this is the VsCode project you should open in order to work with the software.
+* sw: this is the VsCode project you should open in order to work with the software.
 * www: software for the backend web-server, like
 ** post log script
 ** view log script
 
 
-
-## Project overview
-The goal here is to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
-
-The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distance-sensors and acc/gyro/compass. This design was made to be simple and easy to both understand and replicate. I hope it will be a source of inspiration and give ideas for improvements. 
-
-This repo is now updated and will be used as a start for the 'Nöörd-Team' at ScaniaHack May 16th and 17th 2024. This repo will contain everything needed in this project and also try to explain the progress and eventually the results.
-
-
-### Other uses:
-However, it is possible to use my PCB-design or the schematics and build a sort of control-board for the motors and then have the actual control-system on an other device, such as a raspberry-pi.
-
-Each distance sensor uses 2 ios from the ESP32 and these can of course be used by other sensors as well but pay attention to the power-supply for these since they use power directly from the batteries. 
-
+## Other uses:
+It is possible to use my PCB-design for an other type of vehicle or use the schematics and build any other sort of control-board. The ESP32 is a very versatile microcontroller and can be used for many different applications.
 
 ## Good links to get started with ESP32
 
@@ -57,7 +51,6 @@ Each distance sensor uses 2 ios from the ESP32 and these can of course be used b
 * link:https://www.espressif.com/en/products/socs/esp32/resources[Espressif Resources]
 * link:https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html[ESP-IDF Programming Guide]
 * link:https://www.arduino.cc/en/Guide/ESP32[Arduino Guide for ESP32]
-
 
 
 ## Errata HW version2 (important stuff)

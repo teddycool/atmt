@@ -1,15 +1,14 @@
 #include <Arduino.h>
 #include <FastLED.h>
 #include "light.h"
-#define NUM_LEDS 4
-#define CPIN 32
+#include "atmio.h"
 
-CRGB leds[NUM_LEDS];
+CRGB leds[LIGHT_NUM_LEDS];
 
 
 void Light::SetUp(){
     pinMode(CPIN, OUTPUT);
-    FastLED.addLeds<NEOPIXEL, CPIN>(leds, NUM_LEDS);
+    FastLED.addLeds<NEOPIXEL, LIGHT_PIN>(leds, LIGHT_NUM_LEDS);
 }
 
 void Light::Set(int id, uint8_t color ){
@@ -17,7 +16,7 @@ void Light::Set(int id, uint8_t color ){
 }
 
 void Light::Off(){
-for(int i = 0; i < NUM_LEDS; i++) {
+for(int i = 0; i < LIGHT_NUM_LEDS; i++) {
     leds[i] = CRGB::Black;
 }
     FastLED.show();
@@ -41,7 +40,7 @@ void Light::BrakeLight(){
 
 
 void Light::Test(){
-for(int i = 0; i < NUM_LEDS; i++) {
+for(int i = 0; i < LIGHT_NUM_LEDS; i++) {
     leds[i] = CRGB::Red;
 }
     FastLED.show();
