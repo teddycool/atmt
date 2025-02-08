@@ -3,18 +3,11 @@
 #include <motor.h>
 
 
-#define PWM
+//#define PWM
 
 // Ultrasound number and pins
 // Motor
-#define M1E_PIN 2
-#define M1F_PIN 4
-#define M1R_PIN 5
 
-// Steering (without servo)
-#define SENABLE 33
-#define SRIGHT 27
-#define SLEFT 23
 
 //  Laser Lidar ToF __________________________
 /*#define VL53L0X_REG_IDENTIFICATION_MODEL_ID 0xc0
