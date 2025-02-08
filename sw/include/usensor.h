@@ -11,7 +11,7 @@ public:
     // declare default constructor with echo and trigger pins, 
     //the varname is where the values should be stored
 
-  int Usensor::open(uint8_t trig, uint8_t echo,VarNames name);
+  int open(uint8_t trig, uint8_t echo,VarNames name);
     //add a sensor to the list of sensors measured. 
 
   //int read(VarNames);
