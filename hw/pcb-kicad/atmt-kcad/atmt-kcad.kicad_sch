@@ -3060,7 +3060,7 @@
 				)
 			)
 		)
-		(symbol "Regulator_Linear:LP2987-3.3_SOIC8_VSSOP8"
+		(symbol "Regulator_Linear:LP2988-3.3_SOIC8_VSSOP8"
 			(pin_names
 				(offset 0.254)
 			)
@@ -3075,7 +3075,7 @@
 					)
 				)
 			)
-			(property "Value" "LP2987-3.3_SOIC8_VSSOP8"
+			(property "Value" "LP2988-3.3_SOIC8_VSSOP8"
 				(at -1.905 5.715 0)
 				(effects
 					(font
@@ -3103,7 +3103,7 @@
 					(hide yes)
 				)
 			)
-			(property "Description" "200mA Linear LDO Regulator, MicroPower, Fixed Output 3.3V, SO8/MSOP8"
+			(property "Description" "200mA Linear LDO Regulator, Low Noise, MicroPower, Fixed Output 3.3V, SO8/MSOP8"
 				(at 0 0 0)
 				(effects
 					(font
@@ -3130,10 +3130,10 @@
 					(hide yes)
 				)
 			)
-			(symbol "LP2987-3.3_SOIC8_VSSOP8_0_1"
+			(symbol "LP2988-3.3_SOIC8_VSSOP8_0_1"
 				(rectangle
 					(start -7.62 4.445)
-					(end 7.62 -5.08)
+					(end 7.62 -7.62)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -3143,11 +3143,11 @@
 					)
 				)
 			)
-			(symbol "LP2987-3.3_SOIC8_VSSOP8_1_1"
-				(pin no_connect line
-					(at -2.54 -7.62 90)
-					(length 2.54) hide
-					(name "NC"
+			(symbol "LP2988-3.3_SOIC8_VSSOP8_1_1"
+				(pin passive line
+					(at 10.16 -5.08 180)
+					(length 2.54)
+					(name "BP"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3181,7 +3181,7 @@
 					)
 				)
 				(pin power_in line
-					(at 0 -7.62 90)
+					(at 0 -10.16 90)
 					(length 2.54)
 					(name "GND"
 						(effects
@@ -3781,6 +3781,12 @@
 		)
 	)
 	(junction
+		(at 48.26 64.77)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "07bbc084-7217-4ef9-a07f-0e9c2c9f4b51")
+	)
+	(junction
 		(at 87.63 105.41)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3791,6 +3797,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "26300acd-519c-4a7e-88ea-2b6c6b52fb83")
+	)
+	(junction
+		(at 59.69 74.93)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "332bd240-3975-4e11-a3b8-4f113e8bf6a3")
 	)
 	(junction
 		(at 161.29 45.72)
@@ -3827,6 +3839,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "770fe040-36e3-4b5d-86b3-87fb16b8fe0c")
+	)
+	(junction
+		(at 59.69 78.74)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7d63e7e2-eea6-4fe1-a08c-96c3c6e8bb5d")
 	)
 	(junction
 		(at 87.63 129.54)
@@ -4046,6 +4064,16 @@
 	)
 	(wire
 		(pts
+			(xy 59.69 74.93) (xy 59.69 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0b6f3059-a88f-4479-b5e7-248732952bba")
+	)
+	(wire
+		(pts
 			(xy 87.63 105.41) (xy 73.66 105.41)
 		)
 		(stroke
@@ -4146,6 +4174,16 @@
 	)
 	(wire
 		(pts
+			(xy 48.26 64.77) (xy 48.26 77.47)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18d1451a-213c-4de0-b2e8-27a19e42d5e8")
+	)
+	(wire
+		(pts
 			(xy 41.91 234.95) (xy 53.34 234.95)
 		)
 		(stroke
@@ -4173,6 +4211,16 @@
 			(type default)
 		)
 		(uuid "1d43e136-a216-49e9-8411-55b190c95b1c")
+	)
+	(wire
+		(pts
+			(xy 59.69 78.74) (xy 59.69 74.93)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1e0619ff-a667-47c0-8163-b46defa1a330")
 	)
 	(wire
 		(pts
@@ -4273,6 +4321,16 @@
 			(type default)
 		)
 		(uuid "2992bc2e-d336-4d7d-9dba-d803b4e02dff")
+	)
+	(wire
+		(pts
+			(xy 48.26 64.77) (xy 49.53 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2b3c5a72-d9a0-49ed-9e22-36afe14d4123")
 	)
 	(wire
 		(pts
@@ -4596,6 +4654,16 @@
 	)
 	(wire
 		(pts
+			(xy 72.39 69.85) (xy 72.39 71.12)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5ceee890-280d-449e-9fe2-dfafe0207add")
+	)
+	(wire
+		(pts
 			(xy 137.16 214.63) (xy 152.4 214.63)
 		)
 		(stroke
@@ -4656,6 +4724,16 @@
 	)
 	(wire
 		(pts
+			(xy 59.69 78.74) (xy 72.39 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "66957754-05cc-468f-bac6-054b12bd77bb")
+	)
+	(wire
+		(pts
 			(xy 33.02 64.77) (xy 33.02 68.58)
 		)
 		(stroke
@@ -4713,6 +4791,16 @@
 			(type default)
 		)
 		(uuid "6efac18b-980f-433f-835d-3de83c795a3a")
+	)
+	(wire
+		(pts
+			(xy 69.85 69.85) (xy 72.39 69.85)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6fc2bc9f-c580-408d-bac8-5825801c7ec1")
 	)
 	(wire
 		(pts
@@ -5106,7 +5194,7 @@
 	)
 	(wire
 		(pts
-			(xy 59.69 76.2) (xy 59.69 72.39)
+			(xy 59.69 83.82) (xy 59.69 78.74)
 		)
 		(stroke
 			(width 0)
@@ -5336,7 +5424,7 @@
 	)
 	(wire
 		(pts
-			(xy 60.96 76.2) (xy 59.69 76.2)
+			(xy 60.96 83.82) (xy 59.69 83.82)
 		)
 		(stroke
 			(width 0)
@@ -5446,7 +5534,7 @@
 	)
 	(wire
 		(pts
-			(xy 46.99 64.77) (xy 49.53 64.77)
+			(xy 46.99 64.77) (xy 48.26 64.77)
 		)
 		(stroke
 			(width 0)
@@ -5668,7 +5756,7 @@
 	)
 	(text "Power-supply"
 		(exclude_from_sim no)
-		(at 99.568 80.01 0)
+		(at 88.138 84.836 0)
 		(effects
 			(font
 				(size 2.54 2.54)
@@ -5688,7 +5776,6 @@
 	)
 	(label "SCL"
 		(at 321.31 226.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5699,7 +5786,6 @@
 	)
 	(label "Trig3"
 		(at 247.65 132.08 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5710,7 +5796,6 @@
 	)
 	(label "Trig3"
 		(at 53.34 229.87 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5721,7 +5806,6 @@
 	)
 	(label "Echo4"
 		(at 137.16 229.87 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5732,7 +5816,6 @@
 	)
 	(label "M2_2"
 		(at 316.23 33.02 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5743,7 +5826,6 @@
 	)
 	(label "M2F"
 		(at 247.65 134.62 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5754,7 +5836,6 @@
 	)
 	(label "SCL"
 		(at 379.73 236.22 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5765,7 +5846,6 @@
 	)
 	(label "Echo2"
 		(at 137.16 219.71 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5776,7 +5856,6 @@
 	)
 	(label "SDA"
 		(at 247.65 121.92 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5787,7 +5866,6 @@
 	)
 	(label "EN"
 		(at 201.93 86.36 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5798,7 +5876,6 @@
 	)
 	(label "EN"
 		(at 44.45 106.68 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5809,7 +5886,6 @@
 	)
 	(label "M1E"
 		(at 306.07 102.87 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5820,7 +5896,6 @@
 	)
 	(label "M1F"
 		(at 306.07 105.41 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5831,7 +5906,6 @@
 	)
 	(label "IO0"
 		(at 247.65 86.36 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5842,7 +5916,6 @@
 	)
 	(label "M1R"
 		(at 247.65 99.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5853,7 +5926,6 @@
 	)
 	(label "3V3"
 		(at 113.03 105.41 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5864,7 +5936,6 @@
 	)
 	(label "5V"
 		(at 255.27 214.63 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5875,7 +5946,6 @@
 	)
 	(label "5V"
 		(at 115.57 35.56 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5886,7 +5956,6 @@
 	)
 	(label "SDA"
 		(at 394.97 236.22 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5897,7 +5966,6 @@
 	)
 	(label "M2_2"
 		(at 378.46 120.65 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5908,7 +5976,6 @@
 	)
 	(label "ADC"
 		(at 199.39 91.44 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5919,7 +5986,6 @@
 	)
 	(label "Echo1"
 		(at 137.16 214.63 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5930,7 +5996,6 @@
 	)
 	(label "TX"
 		(at 247.65 88.9 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5941,7 +6006,6 @@
 	)
 	(label "5V"
 		(at 76.2 252.73 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5952,7 +6016,6 @@
 	)
 	(label "M1R"
 		(at 306.07 123.19 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5963,7 +6026,6 @@
 	)
 	(label "Echo4L"
 		(at 191.77 229.87 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5974,7 +6036,6 @@
 	)
 	(label "Trig1"
 		(at 67.31 205.74 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5985,7 +6046,6 @@
 	)
 	(label "Trig4"
 		(at 76.2 255.27 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5996,7 +6056,6 @@
 	)
 	(label "M1_2"
 		(at 316.23 46.99 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6007,7 +6066,6 @@
 	)
 	(label "ADC"
 		(at 153.67 38.1 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6018,7 +6076,6 @@
 	)
 	(label "Echo2"
 		(at 100.33 231.14 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6029,7 +6086,6 @@
 	)
 	(label "Echo4L"
 		(at 247.65 116.84 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6040,7 +6096,6 @@
 	)
 	(label "EN"
 		(at 113.03 120.65 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6051,7 +6106,6 @@
 	)
 	(label "M2R"
 		(at 378.46 105.41 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6062,7 +6116,6 @@
 	)
 	(label "TCK"
 		(at 247.65 104.14 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6073,7 +6126,6 @@
 	)
 	(label "Echo3L"
 		(at 191.77 224.79 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6084,7 +6136,6 @@
 	)
 	(label "5V"
 		(at 53.34 227.33 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6095,7 +6146,6 @@
 	)
 	(label "5V"
 		(at 306.07 125.73 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6106,7 +6156,6 @@
 	)
 	(label "RX"
 		(at 247.65 93.98 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6117,7 +6166,6 @@
 	)
 	(label "TCK"
 		(at 119.38 171.45 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6128,7 +6176,6 @@
 	)
 	(label "M1_2"
 		(at 306.07 120.65 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6139,7 +6186,6 @@
 	)
 	(label "5V"
 		(at 67.31 203.2 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6150,7 +6196,6 @@
 	)
 	(label "M2_1"
 		(at 378.46 107.95 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6161,7 +6206,6 @@
 	)
 	(label "Trig1"
 		(at 247.65 111.76 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6172,7 +6216,6 @@
 	)
 	(label "Echo3"
 		(at 137.16 224.79 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6183,7 +6226,6 @@
 	)
 	(label "Echo4"
 		(at 76.2 257.81 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6194,7 +6236,6 @@
 	)
 	(label "TDI"
 		(at 119.38 168.91 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6205,7 +6246,6 @@
 	)
 	(label "Echo1"
 		(at 67.31 208.28 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6216,7 +6256,6 @@
 	)
 	(label "5V"
 		(at 161.29 196.85 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6227,7 +6266,6 @@
 	)
 	(label "TDI"
 		(at 247.65 101.6 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6238,7 +6276,6 @@
 	)
 	(label "Trig4"
 		(at 247.65 119.38 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6249,7 +6286,6 @@
 	)
 	(label "Echo2L"
 		(at 247.65 144.78 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6260,7 +6296,6 @@
 	)
 	(label "M1_1"
 		(at 316.23 44.45 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6271,7 +6306,6 @@
 	)
 	(label "M2_1"
 		(at 316.23 30.48 180)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6282,7 +6316,6 @@
 	)
 	(label "M2E"
 		(at 378.46 125.73 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6293,7 +6326,6 @@
 	)
 	(label "M2R"
 		(at 247.65 127 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6304,7 +6336,6 @@
 	)
 	(label "L1"
 		(at 255.27 217.17 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6315,7 +6346,6 @@
 	)
 	(label "Echo3"
 		(at 53.34 232.41 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6326,7 +6356,6 @@
 	)
 	(label "Echo2L"
 		(at 191.77 219.71 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6337,7 +6366,6 @@
 	)
 	(label "M2E"
 		(at 247.65 139.7 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6348,7 +6376,6 @@
 	)
 	(label "Echo1L"
 		(at 247.65 142.24 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6359,7 +6386,6 @@
 	)
 	(label "TMS"
 		(at 247.65 106.68 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6370,7 +6396,6 @@
 	)
 	(label "Echo1L"
 		(at 191.77 214.63 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6381,7 +6406,6 @@
 	)
 	(label "SDA"
 		(at 321.31 228.6 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6392,7 +6416,6 @@
 	)
 	(label "5V"
 		(at 138.43 245.11 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6403,7 +6426,6 @@
 	)
 	(label "Trig2"
 		(at 100.33 228.6 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6414,7 +6436,6 @@
 	)
 	(label "SCL"
 		(at 247.65 124.46 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6425,7 +6446,6 @@
 	)
 	(label "SDA"
 		(at 354.33 228.6 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6436,7 +6456,6 @@
 	)
 	(label "Trig2"
 		(at 247.65 114.3 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6447,7 +6466,6 @@
 	)
 	(label "IO0"
 		(at 81.28 167.64 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6458,7 +6476,6 @@
 	)
 	(label "RX"
 		(at 39.37 172.72 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6469,7 +6486,6 @@
 	)
 	(label "5V"
 		(at 100.33 226.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6480,7 +6496,6 @@
 	)
 	(label "M1_1"
 		(at 306.07 107.95 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6491,7 +6506,6 @@
 	)
 	(label "TX"
 		(at 39.37 175.26 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6502,7 +6516,6 @@
 	)
 	(label "M2F"
 		(at 378.46 123.19 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6513,7 +6526,6 @@
 	)
 	(label "L1"
 		(at 247.65 137.16 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6524,7 +6536,6 @@
 	)
 	(label "M1E"
 		(at 247.65 91.44 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6535,7 +6546,6 @@
 	)
 	(label "Echo3L"
 		(at 247.65 129.54 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6546,7 +6556,6 @@
 	)
 	(label "TDO"
 		(at 247.65 109.22 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6557,7 +6566,6 @@
 	)
 	(label "M1F"
 		(at 247.65 96.52 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6568,7 +6576,6 @@
 	)
 	(label "TDO"
 		(at 119.38 173.99 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6579,7 +6586,6 @@
 	)
 	(label "SCL"
 		(at 354.33 226.06 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6590,7 +6596,6 @@
 	)
 	(label "TMS"
 		(at 119.38 166.37 0)
-		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -6705,6 +6710,28 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+				(hide yes)
+			)
+		)
+	)
+	(global_label "B+"
+		(shape input)
+		(at 48.26 77.47 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "1d576401-8ba1-49dd-a7b4-4acf29186811")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 42.4324 77.47 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
 				(hide yes)
 			)
 		)
@@ -6997,7 +7024,7 @@
 	)
 	(global_label "GND"
 		(shape input)
-		(at 60.96 76.2 0)
+		(at 60.96 83.82 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -7007,7 +7034,7 @@
 		)
 		(uuid "abd2c89e-5336-45e5-80eb-59fcaf6bf9af")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 67.8157 76.2 0)
+			(at 67.8157 83.82 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8189,24 +8216,25 @@
 		)
 	)
 	(symbol
-		(lib_id "Regulator_Linear:LP2987-3.3_SOIC8_VSSOP8")
+		(lib_id "Regulator_Linear:LP2988-3.3_SOIC8_VSSOP8")
 		(at 59.69 64.77 0)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
-		(uuid "37d06869-3136-469e-ad4c-a789057f3015")
+		(fields_autoplaced yes)
+		(uuid "402f9926-bdb3-4334-a443-f80aab93afbd")
 		(property "Reference" "U2"
-			(at 53.848 57.658 0)
+			(at 59.69 55.88 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
 			)
 		)
-		(property "Value" "LP2987-3.3"
-			(at 49.276 76.2 0)
+		(property "Value" "LP2988-3.3_SOIC8_VSSOP8"
+			(at 59.69 58.42 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -8232,7 +8260,7 @@
 				(hide yes)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "200mA Linear LDO Regulator, Low Noise, MicroPower, Fixed Output 3.3V, SO8/MSOP8"
 			(at 59.69 64.77 0)
 			(effects
 				(font
@@ -8241,32 +8269,32 @@
 				(hide yes)
 			)
 		)
-		(pin "1"
-			(uuid "626f4ea8-dcfd-4ee0-946d-e8aac239e47a")
-		)
-		(pin "2"
-			(uuid "865ccc24-8d76-40dd-b186-09e79726bf18")
-		)
 		(pin "3"
-			(uuid "f1bd5f7d-edb4-4d35-97d5-194540778a1b")
+			(uuid "2f88db58-dfc1-4997-8bda-fe6f6d321172")
+		)
+		(pin "1"
+			(uuid "a53921e1-c593-448a-9437-59298ee54da6")
 		)
 		(pin "4"
-			(uuid "f79355d6-ac01-455f-9653-7343bfee6e40")
+			(uuid "fe00593a-d5e4-419b-ba28-4012a62cee2c")
 		)
-		(pin "5"
-			(uuid "2ecaa060-e699-476c-8b43-ec2558b6ef7f")
-		)
-		(pin "6"
-			(uuid "f1fcc67b-4b79-46ff-b827-f446a7ce2c07")
-		)
-		(pin "7"
-			(uuid "1de199df-3064-4e39-b18b-2aa0a1c37e41")
+		(pin "2"
+			(uuid "3e0fb5e6-7e14-46ac-bf49-853f9c0b4f8a")
 		)
 		(pin "8"
-			(uuid "4918f682-66c8-4b2e-b553-10dfdce7f2dd")
+			(uuid "30c6cee8-b810-4be4-975e-f0a0f8671741")
+		)
+		(pin "6"
+			(uuid "7e04261a-5f00-49b8-8476-f84ebb168d00")
+		)
+		(pin "7"
+			(uuid "aac65169-21f2-4232-b532-f7d38fd80d36")
+		)
+		(pin "5"
+			(uuid "ae698569-e995-47b7-805e-8bd4f1b9dfc0")
 		)
 		(instances
-			(project "atmt-kcad"
+			(project ""
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
 					(reference "U2")
 					(unit 1)
@@ -9139,6 +9167,76 @@
 			(project "atmt-kcad"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
 					(reference "J2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 72.39 74.93 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "9fbb853d-d1ad-4e90-9828-960f854403f9")
+		(property "Reference" "C8"
+			(at 76.2 73.6599 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100n"
+			(at 76.2 76.1999 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
+			(at 73.3552 78.74 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 72.39 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 72.39 74.93 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "e6d42db8-c718-4d35-b8cc-73ee5d6fc0c4")
+		)
+		(pin "2"
+			(uuid "182bdf46-3d71-4245-b16e-7a620ff92097")
+		)
+		(instances
+			(project "atmt-kcad"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(reference "C8")
 					(unit 1)
 				)
 			)
