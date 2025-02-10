@@ -14,7 +14,9 @@ The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distanc
 
 ## How to contribute?
 
-* Fork this repo from main and do your thing in this fork on your own github-account 
+(More details for the git-magic in the wiki)
+
+* Fork this repo from main and do your thing in a feature-branch from this fork on your own github-account 
 * When done, make a pull-request back to main and describe your changes in the pull-request
 * Try to keep one feature or bug-fix per pull-request to make the merging easier
 * If you have any questions or need help, just ask me by pm, email, IRL or in the pull-request and I will try to help you out.
@@ -27,7 +29,7 @@ link:getstarted.adoc[How to get started]
 
 ## Repo layout:
 
-All sections are undergoing a change and will be updated with new information and code. 
+All sections are undergoing change and will be updated with new information and code. 
 
 * doc: documentation and images, 
 ** A workdescription for the conversion
@@ -36,7 +38,8 @@ All sections are undergoing a change and will be updated with new information an
 ** PCB layout and all the schematics in KiCAD format. 
 ** References to used components etc. 
 ** CAD models and 3d printables for some add-ons to the chassi.
-* sw: this is the VsCode project you should open in order to work with the software.
+* sw: this is the 'real' sooftware and and the VsCode project you should open in order to work with the code.
+* hw-test-sw: software for testing the hardware, like hello world. Open the respective subfolder in vscode to work with this code.
 * www: software for the backend web-server, like
 ** post log script
 ** view log script
@@ -53,13 +56,29 @@ It is possible to use my PCB-design for an other type of vehicle or use the sche
 * link:https://www.arduino.cc/en/Guide/ESP32[Arduino Guide for ESP32]
 
 
-## Errata HW version2 (important stuff)
+## Connect and download to the ESP32
+
+Connecting and downloading to the ESP might be a nightmare some times. Usually it goes well but when it starts to bug it can go on forever. However, you are not alone, google will help out when you search for your error message. 
+
+Sometimes it works better if you power the pcb from the usb-port using a 3.3V type of FTD like FTDI1232 set to 3.3V. In this case the power from the batteries needs to be off or you might destroy the circuit. #Allways leave battery-power off when using power from the programming interface#.
+
+
+## Errata HW version 3 (important stuff)
+
+* Some connections where missing in the first version of the schematics, like the connection between the B+ and the diode in the voltage-regulator. This is now fixed in the schematics and the pcb-layout for version 3.1
+
+## Errata HW version 2 (important stuff)
 
 * To keep the ESP safe on the io-side I am using rechargable batteries summing up to 3.6 volts which works just fine, but with alkalines you will probably get like 4.6 or 4.7 volts with fresh batteries which might damage the ESP32 io. Don't use those... 
 * In the schematics I used a 1N4148 diode for reversed polarity protection but this was NOT a good choice. This can be left out completely or replaced by a schottky type of diode with a low voltage-drop.
-* Connecting and downloading to the ESP might be a nightmare some times. Usually it goes well but when it starts to bug it can go on forever. However, you are not alone, google will help out when you search for your error message. Sometimes it works better if you power the pcb from the usb-port using a 3.3V type of FTD like FTDI1232 set to 3.3V. In this case the power from the batteries needs to be off or you might destroy the circuit. #Allways leave battery-power off when using power from the programming interface#.
 
 ## Starting material from Biltema's toy-department
+
+Unfurthunatly this specific model is not sold anymore at Biltema but there are many other modelsat Biltema or elsewhere that can be used for this project. The most important thing is that the chassi is big enough to fit the new electronics and that the wheels are big enough to handle the terrain you want to drive on.
+
+## Designing a new PCB formfactor
+
+You can of course also design a new PCB formfactor from the schematics provided. The KiCAD files in the `hw` directory include all the necessary components and connections. Feel free to modify the layout to better fit your specific needs or to improve the design. If you come up with a better design, please share it with the community by making a pull-request.
 
 image::doc/images/20201212_103947.jpg["Starters from Biltema toy-department"]
 
