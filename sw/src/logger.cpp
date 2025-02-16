@@ -1,12 +1,15 @@
 #include "logger.h"
-#include "logger.h"
 #include <sstream>
+#include <iomanip>
 #include <algorithm>
 #include <WiFiClient.h>
 #include <HTTPClient.h>
-#include "secrets.h"
+#include <secrets.h>
+#include <thread>
+#include <future>
 
-Logger::Logger() {
+Logger::Logger(String chipid) {
+    this->chipid = chipid;
     // No initialization needed for HTTPClient
 }
 
@@ -14,34 +17,29 @@ Logger::~Logger() {
     // No cleanup needed for HTTPClient
 }
 
-void Logger::log(const std::string& message, LogLevel level) {
-    WiFiClient wificlient;
-    HTTPClient http;
 
-    std::string logMessage = "[" + levelToString(level) + "] " + message;
+void Logger::postlog(String msg)
+{
+  WiFiClient wificlient; // Used for sending http to url
+  HTTPClient http;
 
-    std::string encodedMessage = logMessage;
- //   std::replace(encodedMessage.begin(), encodedMessage.end(), ' ', '%20');
-    std::string fullUrl = "http://" + std::string(postserver) + std::string(postresource) + "?msg=" + encodedMessage;
-
-    http.begin(wificlient, fullUrl.c_str());
-    int httpResponseCode = http.GET();
-
-    if (httpResponseCode > 0) {
-        std::cout << "HTTP Response code: " << httpResponseCode << std::endl;
-    } else {
-        std::cerr << "Error code: " << httpResponseCode << std::endl;
-    }
-
-    http.end();
-}
-
-std::string Logger::levelToString(LogLevel level) {
-    // ...existing code...
-    switch (level) {
-        case INFO: return "INFO";
-        case WARNING: return "WARNING";
-        case ERROR: return "ERROR";
-        default: return "UNKNOWN";
-    }
+  msg.replace(" ", "%20");
+  String url = "http://192.168.2.2/post_log.php?chipid=" + chipid + "&msg=" + msg;
+ // String url = "http://" + String(postserver) + String(postresource) + "?chipid=" + this->chipid + "&msg="  + msg;
+  Serial.println(url);  
+ 
+  http.begin(wificlient, url);
+  int httpResponseCode = http.GET();
+  if (httpResponseCode > 0)
+  {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCode);
+  }
+  else
+  {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCode);
+  }
+  // Free resources
+  http.end();
 }

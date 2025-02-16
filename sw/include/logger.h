@@ -4,24 +4,17 @@
 #include <string>
 #include <iostream>
 #include <HTTPClient.h>
-#include "secrets.h"
 
 class Logger {
 public:
-    enum LogLevel {
-        INFO,
-        WARNING,
-        ERROR
-    };
-
-    Logger();
+   
+    Logger(String chipid);
     ~Logger();
 
-    void log(const std::string& message, LogLevel level = INFO);
+    void postlog(String msg);    
 
 private:
-    std::string getTimestamp();
-    std::string levelToString(LogLevel level);
+    String chipid;
 };
 
 #endif // LOGGER_H
