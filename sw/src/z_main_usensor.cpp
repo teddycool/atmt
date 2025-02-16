@@ -53,8 +53,8 @@ void setup()
 	Serial.print("Number of VARs: ");
 	Serial.println(NUM_VARS);
 	ultraSound.open(TRIGGER_PIN,ECHO_PIN,rawDistFront);
-	ultraSound.open(TRIGGER_PIN2,ECHO_PIN2,rawDistLeft);
-	ultraSound.open(TRIGGER_PIN3,ECHO_PIN3,rawDistRight);
+	//ultraSound.open(TRIGGER_PIN2,ECHO_PIN2,rawDistLeft);
+	//ultraSound.open(TRIGGER_PIN3,ECHO_PIN3,rawDistRight);
 	Serial.println(ultraSound.open(TRIGGER_PIN4,ECHO_PIN4,rawDistBack));
 	uint64_t chipId = ESP.getEfuseMac();
 	Serial.println();
@@ -81,16 +81,7 @@ void loop()
 	Serial.print(" cm (");
 	Serial.print(age);
 	Serial.print(")");
-	Serial.print("  Left: ");
-	Serial.print(globalVar_get(rawDistLeft, &age));
-	Serial.print(" cm (");
-	Serial.print(age);
-	Serial.print(")");
-	Serial.print("  Right: ");
-	Serial.print(globalVar_get(rawDistRight, &age));
-	Serial.print(" cm (");
-	Serial.print(age);
-	Serial.print(")");
+	
 	Serial.print("  Back: ");
 	Serial.print(globalVar_get(rawDistBack, &age));
 	Serial.print(" cm (");
