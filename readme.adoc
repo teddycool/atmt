@@ -34,11 +34,12 @@ All sections are undergoing change and will be updated with new information and 
 * doc: documentation and images, 
 ** A workdescription for the conversion
 ** A proposal for how to setup the work at ScaniaHack
-* hw: the toy-truck hardware including:
+* hw: electronics hardware including:
 ** PCB layout and all the schematics in KiCAD format. 
 ** References to used components etc. 
-** CAD models and 3d printables for some add-ons to the chassi.
-* sw: this is the 'real' sooftware and and the VsCode project you should open in order to work with the code.
+* toy-truck
+** CAD models and 3d printables for some add-ons to the toy-truck chassi.
+* sw: this is the 'real' software and the VsCode project you should open in order to work with the code. To test different parts of the software we use 'environments' in the platformio.ini file.
 * hw-test-sw: software for testing the hardware, like hello world. Open the respective subfolder in vscode to work with this code.
 * www: software for the backend web-server, like
 ** post log script
@@ -74,7 +75,7 @@ Sometimes it works better if you power the pcb from the usb-port using a 3.3V ty
 
 ## Starting material from Biltema's toy-department
 
-Unfurthunatly this specific model is not sold anymore at Biltema but there are many other modelsat Biltema or elsewhere that can be used for this project. The most important thing is that the chassi is big enough to fit the new electronics and that the wheels are big enough to handle the terrain you want to drive on.
+Unfurthunatly this specific model is not sold anymore at Biltema but there are many other models at Biltema or elsewhere that can be used for this project. The most important thing is that the chassi is big enough to fit the new electronics and that the wheels are big enough to handle the terrain you want to drive on.
 
 ## Designing a new PCB formfactor
 
