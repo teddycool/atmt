@@ -2,7 +2,8 @@
 #ifndef USENSOR_H
 #define USENSOR_H  
 
-#include <setget.h>
+#include <variables/setget.h>
+#include <cstdint>
 
 class Usensor
 {

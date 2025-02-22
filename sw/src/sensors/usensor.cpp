@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
-#include <usensor.h>
-#include <setget.h>
+#include <sensors/usensor.h>
+#include <variables/setget.h>
 
 #define MAX_SENSORS 10
 

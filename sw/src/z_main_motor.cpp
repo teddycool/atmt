@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include <setget.h>
-#include <motor.h>
+#include <variables/setget.h>
+#include <actuators/motor.h>
 
 
 //#define PWM
