@@ -28,14 +28,30 @@
 #define SLEFT 23
 
 // US sensors
-#define TFRONT 16 // ECHO1
-#define EFRONT 34
-#define TLEFT 26 // ECHO3
-#define ELEFT 25
-#define TREAR 19 // ECHO4
-#define EREAR 18
-#define TRIGHT 17 // ECHO2
-#define ERIGHT 35
+// Ultrasound number and pins for PMS
+
+// #define NUM_SENSORS 4
+// #define TRIGGER_PIN1 16
+// #define ECHO_PIN1 34
+// #define TRIGGER_PIN2 17
+// #define ECHO_PIN2 35
+// #define TRIGGER_PIN3 26
+// #define ECHO_PIN3 25
+// #define TRIGGER_PIN4 19
+// #define ECHO_PIN4 18
+
+// Ultrasound number and pins for ATMT
+#define NUM_SENSORS 4
+#define TRIGGER_PIN1 16 //Front
+#define ECHO_PIN1 34
+#define TRIGGER_PIN2 17 //Right
+#define ECHO_PIN2 35
+#define TRIGGER_PIN3 26 //Left
+#define ECHO_PIN3 25
+#define TRIGGER_PIN4 19 //Rear
+#define ECHO_PIN4 18
+
+#
 
 // Light (Neopixel)
 #define LIGHT_PIN 14

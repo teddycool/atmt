@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include <setget.h>
-#include <usensor.h>
+#include <variables/setget.h>
+#include <sensors/usensor.h>
 #include <logger.h>
 #include <secrets.h>
 #include <ArduinoUniqueID.h>
