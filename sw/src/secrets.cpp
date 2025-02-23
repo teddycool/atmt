@@ -1,5 +1,7 @@
 #include "secrets.h"
 
+//const char* ssid = "dlink-4ECC";
+//const char* password = "szcin99228";
 const char* ssid = "HackNet1";
 const char* password = "scaniahack";
 

@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <motor.h>
+#include <actuators/motor.h>
 
 // Motor 1 (left or both sides if SINGLE motor)
 #define ENABLE_ch1_PIN 2
