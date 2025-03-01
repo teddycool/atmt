@@ -9,6 +9,8 @@
 
 // Create a lookup table for the variable names
 typedef enum {
+    zeroAx,         //the start offset that represent 0
+    zeroGz,
     rawDistLeft,  //in cm
     rawDistFront, 
     rawDistRight, 
@@ -34,12 +36,12 @@ typedef enum {
 
 // Function prototypes
 void globalVar_init(void);
-void globalVar_set(VarNames varName, int value);
-int globalVar_get(VarNames varName);
-int globalVar_get_total(VarNames varName);
+void globalVar_set(VarNames varName, long value);
+long globalVar_get(VarNames varName);
+long globalVar_get_total(VarNames varName);
 void globalVar_reset_total(VarNames varName);
-int globalVar_get(VarNames varName, long *age);
-int globalVar_get_delta(VarNames varName);
-int globalVar_get_TOT_delta(VarNames varName);
+long globalVar_get(VarNames varName, long *age);
+long globalVar_get_delta(VarNames varName);
+long globalVar_get_TOT_delta(VarNames varName);
 
 #endif // GLOBAL_VAR_H
