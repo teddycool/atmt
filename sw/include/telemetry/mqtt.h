@@ -8,13 +8,17 @@
 class Mqtt {
 public:
     Mqtt();
-    void connect(String chipId);
-    void send(String chipId,const String& topic, const String& message);
+    void init(String chipId);
+    void send(const String& topic, const String& message);
+    void subscribe(const String& topic);
+    void loop();
 
 private:
     WiFiClient wifiClient;
     PubSubClient mqttClient;
-    
+    String chipId;
+    void connect();
+    static void mqttCallback(char* topic, byte* payload, unsigned int length);
 };
 
 #endif // MQTT_H

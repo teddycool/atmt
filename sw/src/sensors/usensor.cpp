@@ -3,9 +3,9 @@
 #include <sensors/usensor.h>
 #include <variables/setget.h>
 
-#define MAX_SENSORS 10
+#define MAX_SENSORS 4
 
-#define POLL_INTERVAL 15
+#define POLL_INTERVAL 50
 // time in ms between each sensor poll, remember one sensor at a time is polled
 // not to interfere with each other
 // do not go below 15ms (12 ms + some margin, for a 199cm measure)
