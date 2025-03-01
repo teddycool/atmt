@@ -4,16 +4,34 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+enum motorType_t
+{
+    SINGLE,
+    DIFFERENTIAL
+};
+
+enum steerType_t
+{
+    SERVO,
+    MOTOR
+};
+
 class Config
 {
-public:
-    Config();
-
-public:
-    // drive_type_t DRIVE_TYPE;
-    // steer_type_t STEER_TYPE;
+private:
     uint64_t ID = 0;
     String NAME;
+
+public:
+    Config(void);
+    void Begin(void);
+
+    motorType_t get_motorType(void);
+    steerType_t get_steerType(void);
+    boolean get_servoReverse(void);
+    int get_steer_servo_min(void);
+    int get_steer_servo_max(void);
+    int get_steer_servo_adjust(void);
 };
 
 #endif
