@@ -3,7 +3,6 @@
 #define USENSOR_H  
 
 #include <variables/setget.h>
-#include <cstdint>
 
 class Usensor
 {

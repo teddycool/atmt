@@ -53,16 +53,14 @@ void setup()
 	Serial.print("Number of VARs: ");
 	Serial.println(NUM_VARS);
 	ultraSound.open(TRIGGER_PIN,ECHO_PIN,rawDistFront);
-	//ultraSound.open(TRIGGER_PIN2,ECHO_PIN2,rawDistLeft);
-	//ultraSound.open(TRIGGER_PIN3,ECHO_PIN3,rawDistRight);
+	ultraSound.open(TRIGGER_PIN2,ECHO_PIN2,rawDistLeft);
+	ultraSound.open(TRIGGER_PIN3,ECHO_PIN3,rawDistRight);
 	Serial.println(ultraSound.open(TRIGGER_PIN4,ECHO_PIN4,rawDistBack));
 	uint64_t chipId = ESP.getEfuseMac();
 	Serial.println();
 	Serial.println("******************************************************");
 	Serial.print("ESP32 Unique Chip ID (MAC): ");
-	Serial.println(chipId, HEX);  // Print the MAC address in hexadecimal format
-	Serial.println("******************************************************");
-	Serial.println();
+	Serial.println(chipId, HEX);  // Print the ESP32 EFUSE MAC address in hexadecimal format
 	Serial.println("Below a continous measure of distances in cm and (age) in ms if the measure");
 	Serial.println("The age depends on the POLL_INTERVAL set in the usensor packet");
 	Serial.println();
@@ -81,7 +79,16 @@ void loop()
 	Serial.print(" cm (");
 	Serial.print(age);
 	Serial.print(")");
-	
+	Serial.print("  Left: ");
+	Serial.print(globalVar_get(rawDistLeft, &age));
+	Serial.print(" cm (");
+	Serial.print(age);
+	Serial.print(")");
+	Serial.print("  Right: ");
+	Serial.print(globalVar_get(rawDistRight, &age));
+	Serial.print(" cm (");
+	Serial.print(age);
+	Serial.print(")");
 	Serial.print("  Back: ");
 	Serial.print(globalVar_get(rawDistBack, &age));
 	Serial.print(" cm (");

@@ -19,7 +19,7 @@
 // Accept a smaller maximum measure distance. If you go down to 5 ms for instance
 // the absolute maximu you could measure would be about 80 cm, above that the measure would say 199
 // also consider the time it takes to move a task back and forth to the delay queue (overhead)
-// set the time to what you NEED, not what would be cool :-) Rather start with a high number 
+// set the time to what you NEED, not what would be cool :-) Rather start with a high number
 // like 50ms or even 100ms and see if/when you need more. Even with 100ms and 4 sensors you will
 // still measure the distance in all direction more then twice each second!
 
@@ -35,7 +35,7 @@ volatile sensors sensor[MAX_SENSORS];
 volatile int num_sensors = 0;
 volatile int current_sensor = 0;
 volatile bool pulse_active = false; // indicate a pulse has been sent and no echo yet received.
-volatile long startTime;
+volatile long startTime;  //need to implement proper wrap around for this using nsigned and signed
 
 void echoInterrupt()
 {
@@ -80,15 +80,21 @@ static void TriggerTask(void *params)
         if (num_sensors > 0)
         {
             if (pulse_active)
+            {
                 // vTaskDelay(pdMS_TO_TICKS(50)); // we have not yet reveived an echo from the previous trigger,
                 // set distance to 199 indicating unknown value
                 globalVar_set(sensor[current_sensor].NAME, 199);
+            }
             current_sensor++;
             if (current_sensor >= num_sensors)
+            {
                 // Making sure we iterate between the sensors we have opened, returning to the first sensor to start over again
                 // maybe a for loop inside a loop would be more visual ans self explanatory?
+                // It would also be possible to build a more advanced scheduling algorithm, for instance that the first
+                // sensor registered would be be polled in between every other, to give it much higher resolution
+                //  Could make sense for the forward sensor if running at high speeds.
                 current_sensor = 0;
-
+            }
             // Initialize trigger and echo pins
             pinMode(sensor[current_sensor].TRIG, OUTPUT);
             pinMode(sensor[current_sensor].ECHO, INPUT);
