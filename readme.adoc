@@ -25,7 +25,14 @@ The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distanc
 
 ## How to get started
 
-link:getstarted.adoc[How to get started]
+link:getstarted.adoc[How to get started with coding]
+
+
+link:hw/atmt-schematic-v3.pdf[HW schematics for reference]
+
+
+link:hw/hardware.adoc[Used hardware]
+
 
 ## Repo layout:
 
@@ -40,7 +47,7 @@ All sections are undergoing change and will be updated with new information and 
 * toy-truck
 ** CAD models and 3d printables for some add-ons to the toy-truck chassi.
 * sw: this is the 'real' software and the VsCode project you should open in order to work with the code. To test different parts of the software we use 'environments' in the platformio.ini file.
-* hw-test-sw: software for testing the hardware, like hello world. Open the respective subfolder in vscode to work with this code.
+* hw-test-sw: software for testing the hardware, like hello world.
 * www: software for the backend web-server, like
 ** post log script
 ** view log script
@@ -80,6 +87,8 @@ Unfurthunatly this specific model is not sold anymore at Biltema but there are m
 ## Designing a new PCB formfactor
 
 You can of course also design a new PCB formfactor from the schematics provided. The KiCAD files in the `hw` directory include all the necessary components and connections. Feel free to modify the layout to better fit your specific needs or to improve the design. If you come up with a better design, please share it with the community by making a pull-request.
+
+link:hw/atmt-schematic-v3.pdf[Schematics for reference]
 
 image::doc/images/20201212_103947.jpg["Starters from Biltema toy-department"]
 
