@@ -28,4 +28,15 @@ void loop()
         steer.direction(dir);          // Write PWM signal to the servo
         vTaskDelay(pdMS_TO_TICKS(30)); // Wait for the servo to reach the position
     }
+
+    steer.Stop();
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    steer.Left();
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    steer.Right();
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+
 }
