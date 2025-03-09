@@ -4,9 +4,15 @@
 #include <variables/setget.h>
 #include <freertos/FreeRTOS.h>
 #include <sensors/compass.h>
+#include <sensors/kalman_filter.h>
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
+
+// Kalman filter objects for each axis
+KalmanFilter kfX(0.01f, 0.1f, 1.0f, 0.0f);
+KalmanFilter kfY(0.01f, 0.1f, 1.0f, 0.0f);
+KalmanFilter kfZ(0.01f, 0.1f, 1.0f, 0.0f);
 
 Compass::Compass()
 {
@@ -20,11 +26,17 @@ static void compass_task(void *pvParameters)
     mag.getEvent(&event);
 
     float magx = event.magnetic.x;
-    globalVar_set(rawMagX, magx);
     float magy = event.magnetic.y;
-    globalVar_set(rawMagY, magy);
     float magz = event.magnetic.z;
-    globalVar_set(rawMagZ, magz);
+
+    // Update estimates using Kalman filters
+    float filteredMagX = kfX.updateEstimate(magx);
+    float filteredMagY = kfY.updateEstimate(magy);
+    float filteredMagZ = kfZ.updateEstimate(magz);
+
+    globalVar_set(rawMagX, filteredMagX);
+    globalVar_set(rawMagY, filteredMagY);
+    globalVar_set(rawMagZ, filteredMagZ);
     vTaskDelay(pdMS_TO_TICKS(20));
   }
 }
@@ -37,7 +49,12 @@ void Compass::Begin()
   globalVar_set(rawMagY, 0);
   globalVar_set(rawMagZ, 0);
   Wire.begin();
-  mag.begin();
+  
+  if (!mag.begin())
+  {
+    Serial.println("Failed to initialize HMC5883 sensor!");
+    while (1);
+  }
 
   Serial.println("Starting Compass");
   xTaskCreate(
