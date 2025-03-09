@@ -8,7 +8,7 @@
 const int servoPin = 32;      // Change to your GPIO pin
 const int pwmFreq = 50;       // Frequency for servo control (50Hz)
 const int pwmResolution = 10; // 8-bit resolution (0-255 range)
-const int pwmChannel = 1;     // PWM channel, motor control is ch 0
+const int pwmChannel = 2;     // PWM channel, motor control is ch 0 (and ch 1 if differential)
 
 Config conf2;
 
