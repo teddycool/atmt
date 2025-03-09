@@ -36,7 +36,7 @@ void setup()
 void loop()
 {
    vTaskDelay(pdMS_TO_TICKS(1000));
-   drive.driving(80);
+   drive.driving(100);
    vTaskDelay(pdMS_TO_TICKS(1000));
-   drive.driving(-90);
+   drive.driving(-100);
 };

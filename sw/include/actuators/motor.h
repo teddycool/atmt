@@ -3,12 +3,14 @@
 #ifndef MOTOR_H
 #define MOTOR_H  
 
-enum motorType_t {SINGLE, DIFFERENTIAL} ;
+#include <config.h>
+
+
 
 class Motor
 {
 private:
-  motorType_t MOTORTYPE;
+  motorType_t motorType;
   /*
   const uint8_t ME;  
   const uint8_t MF;
@@ -17,7 +19,7 @@ private:
   */
 
 public:
-  Motor(motorType_t motorType = SINGLE);  // declare default constructor with controlpin input
+  Motor();  // declare default constructor with controlpin input
 
 
 

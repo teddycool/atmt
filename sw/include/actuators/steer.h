@@ -1,18 +1,25 @@
-//hearderfile for Steering control
+// hearderfile for Steering control
 
 #ifndef STEER_H
-#define STEER_H    
+#define STEER_H
 
-#include "motor.h"
+#include <actuators/motor.h>
 
 class Steer
 {
 public:
-  Steer(Motor motor );  // declare default constructor with controlpin input
-  
+  Steer(); // declare default constructor with controlpin input
+  void Begin();
+  void direction(int direction);
 
 private:
   Motor motor;
+  motorType_t motorType;
+  steerType_t steerType;
+  boolean servoReverse = false;
+  int steer_servo_min = 0;
+  int steer_servo_max = 0;
+  int steer_servo_adjust = 0;
 
 public:
   void Right();

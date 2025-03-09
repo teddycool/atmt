@@ -3,8 +3,8 @@
 motorType_t motorType;
 steerType_t steerType;
 boolean servoReverse = false;
-int steer_servo_min = 13;
-int steer_servo_max = 25;
+int steer_servo_min = 51;
+int steer_servo_max = 102;
 int steer_servo_adjust = 0;
 
 Config::Config(void){};
@@ -24,9 +24,9 @@ void Config::Begin(void)
         Serial.println("Configures PAT03");
         motorType = SINGLE;
         steerType = SERVO;
-        steer_servo_min = 13;
-        steer_servo_max = 23;
-        steer_servo_adjust = 4;
+        steer_servo_min = 60;
+        steer_servo_max = 105;
+        steer_servo_adjust = 5;
         break;
 
     default:
