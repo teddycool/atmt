@@ -1,8 +1,10 @@
 // this packet allows for individual configs of the trucks
-#include <Arduino.h>
-
 #ifndef CONFIG_H
 #define CONFIG_H
+
+#include <Arduino.h>
+
+
 
 enum motorType_t
 {

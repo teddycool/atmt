@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <actuators/motor.h>
+#include <config.h>
 
 // Motor 1 (left or both sides if SINGLE motor)
 #define ENABLE_ch1_PIN 2
@@ -16,7 +17,7 @@
 #define MOTOR_PWM_FREQUENCY 5000 // this can be increased later, but hainv an audiable frquency helps the debug phase
                                  // the L293 might be able to handle all the way up to 20000, but 10-12000 should be enough
 
-// motorType_t MOTORTYPE;
+//motorType_t motorType;
 
 // left or single
 uint8_t enable_ch1_pin = 0;
@@ -28,11 +29,14 @@ uint8_t enable_ch2_pin = 0;
 uint8_t forward_ch2_pin = 0;
 uint8_t reverse_ch2_pin = 0;
 
+Config conf;
+
 /*Motor::Motor(uint8_t ena, uint8_t frw, uint8_t rev) : ME(ena), MF(frw), MB(rev){
 }*/
-Motor::Motor(motorType_t motorType)
+Motor::Motor()
 {
-  MOTORTYPE = motorType;
+  conf.Begin();
+  motorType = conf.get_motorType();
   switch (motorType)
   {
   case SINGLE:
@@ -71,15 +75,15 @@ Motor::Motor(motorType_t motorType)
 
 void Motor::driving(int speed, int balance)
 {
-  if (MOTORTYPE == DIFFERENTIAL)
+  if (motorType == DIFFERENTIAL)
   {
     // not yet implemented
   }
-  else
+  else  //MOTORTYPE IS SINGLE meaning that right and left are driven the same
   {
     // SINGLE
     // bvalance to be ignored in single mode
-    if (speed == 0)
+    if (0 == speed)
     {
       ledcWrite(LEFT_MOTOR_PWM_CHANNEL, 0);
       // free wheel is automatic since thre enable signal is missing we do not need to change
