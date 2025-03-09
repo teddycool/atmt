@@ -1,11 +1,14 @@
 #include <actuators/steer.h>
+#include <variables/setget.h>
 
 Steer steer;
 
 void setup()
 {
     Serial.begin(57600);
+    globalVar_init();
     steer.Begin();
+ 
     Serial.println("Steer initiated)");
     vTaskDelay(pdMS_TO_TICKS(1000));
 }
