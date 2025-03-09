@@ -2,6 +2,7 @@
 #include <actuators/steer.h>
 #include <config.h>
 #include <actuators/motor.h>
+#include <variables/setget.h>
 
 // Define the pin for the servo
 const int servoPin = 32;      // Change to your GPIO pin
@@ -18,9 +19,10 @@ Steer::Steer()
 
 void Steer ::Begin()
 {
+  globalVar_set(steerDirection, 0);
   steerType = conf2.get_steerType();
   switch (steerType)
-    
+
   {
   case SERVO:
   {
@@ -56,6 +58,8 @@ void Steer::direction(int direction)
     direction = 100;
   if (direction < -100)
     direction = -100;
+
+  globalVar_set(steerDirection, direction);
 
   switch (steerType)
   {
