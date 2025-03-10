@@ -2,12 +2,23 @@
 #include <actuators/steer.h>
 #include <config.h>
 #include <actuators/motor.h>
+#include <variables/setget.h>
+
+const int STEER_enable_pin = 33;
+const int STEER_left_pin = 27;
+const int STEER_right_pin = 23;
 
 // Define the pin for the servo
 const int servoPin = 32;      // Change to your GPIO pin
 const int pwmFreq = 50;       // Frequency for servo control (50Hz)
 const int pwmResolution = 10; // 8-bit resolution (0-255 range)
-const int pwmChannel = 1;     // PWM channel, motor control is ch 0
+const int pwmChannel = 2;     // PWM channel, motor control is ch 0 (and ch 1 if differential)
+
+// PWM settings steering with MOTOR
+const int freq = 5000;     // Frequency for PWM signal
+const int resolution = 10; // Resolution for PWM signal
+const int MAX_PWM = pow(2, resolution) - 1;
+const int STEER_PWM_channel = 1;
 
 Config conf2;
 
@@ -18,9 +29,11 @@ Steer::Steer()
 
 void Steer ::Begin()
 {
+  globalVar_set(steerDirection, 0);
   steerType = conf2.get_steerType();
+
   switch (steerType)
-    
+
   {
   case SERVO:
   {
@@ -40,6 +53,11 @@ void Steer ::Begin()
   }
   case MOTOR:
   {
+    pinMode(STEER_enable_pin, OUTPUT);
+    digitalWrite(STEER_enable_pin, LOW);
+    pinMode(STEER_left_pin, OUTPUT);
+    pinMode(STEER_right_pin, OUTPUT);
+
     break;
   }
   default:
@@ -57,6 +75,8 @@ void Steer::direction(int direction)
   if (direction < -100)
     direction = -100;
 
+  globalVar_set(steerDirection, direction);
+
   switch (steerType)
   {
   case SERVO:
@@ -68,6 +88,27 @@ void Steer::direction(int direction)
 
   case MOTOR:
   {
+    int value = abs(direction * MAX_PWM / 100);
+    // Serial.print("Steer:");
+    // Serial.println(value);
+    if (direction < 0)
+    {
+      // LEFT
+      digitalWrite(STEER_left_pin, HIGH);
+      digitalWrite(STEER_right_pin, LOW);
+      ledcWrite(STEER_PWM_channel, value);
+    }
+    else if (direction > 0)
+    {
+      // RIGHT
+      digitalWrite(STEER_left_pin, LOW);
+      digitalWrite(STEER_right_pin, HIGH);
+      ledcWrite(STEER_PWM_channel, value);
+    }
+    else
+    {
+      ledcWrite(STEER_PWM_channel, 0);
+    }
 
     break;
   }

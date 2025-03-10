@@ -31,6 +31,7 @@ typedef enum {
     calcDistance,  // mm
     calcXpos,      // mm
     calcYpos,      // mm
+    steerDirection,     //-100 to +100 wheel direction
     NUM_VARS
 } VarNames;
 
