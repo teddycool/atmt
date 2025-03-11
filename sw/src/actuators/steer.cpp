@@ -4,21 +4,24 @@
 #include <actuators/motor.h>
 #include <variables/setget.h>
 
-const int STEER_enable_pin = 33;
-const int STEER_left_pin = 27;
-const int STEER_right_pin = 23;
+
+const int MOTOR_enable_pin = 33;
+const int MOTOR_left_pin = 27;
+const int MOTOR_right_pin = 23;
 
 // Define the pin for the servo
-const int servoPin = 32;      // Change to your GPIO pin
-const int pwmFreq = 50;       // Frequency for servo control (50Hz)
-const int pwmResolution = 10; // 8-bit resolution (0-255 range)
-const int pwmChannel = 2;     // PWM channel, motor control is ch 0 (and ch 1 if differential)
+const int SERVO_Pin = 32;      // Change to your GPIO pin
+const int SERVO_pwmFreq = 50;       // Frequency for servo control (50Hz)
+const int SERVO_pwmResolution = 10; // 8-bit resolution (0-255 range)
+const int SERVO_pwmChannel = 2;     // PWM channel, motor control is ch 0 (and ch 1 if differential)
+const int SERVO_MAX_PWM = pow(2, SERVO_pwmResolution) - 1;
 
 // PWM settings steering with MOTOR
-const int freq = 5000;     // Frequency for PWM signal
-const int resolution = 10; // Resolution for PWM signal
-const int MAX_PWM = pow(2, resolution) - 1;
-const int STEER_PWM_channel = 1;
+const int MOTOR_PWM_freq = 5000;     // Frequency for PWM signal
+const int MOTOR_resolution = 10; // Resolution for PWM signal
+const int MOTOR_MAX_PWM = pow(2, MOTOR_resolution) - 1;
+const int MOTOR_PWM_channel = 1;
+
 
 Config conf2;
 
@@ -43,20 +46,24 @@ void Steer ::Begin()
     steer_servo_adjust = conf2.get_steer_servo_adjust();
     // set up light pin for 50Hz operation to control the steering servo
     // Set the servo pin as an output
-    pinMode(servoPin, OUTPUT);
+    pinMode(SERVO_Pin, OUTPUT);
     // Configure the LEDC PWM
-    ledcSetup(pwmChannel, pwmFreq, pwmResolution);
+    ledcSetup(SERVO_pwmChannel, SERVO_pwmFreq, SERVO_pwmResolution);
     // Attach the pin to the PWM channel
-    ledcAttachPin(servoPin, pwmChannel);
-    ledcWrite(pwmChannel, (steer_servo_max + steer_servo_min) / 2 + steer_servo_adjust); // neutral position
+    ledcAttachPin(SERVO_Pin, SERVO_pwmChannel);
+    ledcWrite(SERVO_pwmChannel, (steer_servo_max + steer_servo_min) / 2 + steer_servo_adjust); // neutral position
     break;
   }
   case MOTOR:
   {
-    pinMode(STEER_enable_pin, OUTPUT);
-    digitalWrite(STEER_enable_pin, LOW);
-    pinMode(STEER_left_pin, OUTPUT);
-    pinMode(STEER_right_pin, OUTPUT);
+
+    ledcSetup(MOTOR_PWM_channel, MOTOR_PWM_freq, MOTOR_resolution);
+    // Attach the pin to the PWM channel
+    ledcAttachPin(MOTOR_enable_pin, MOTOR_PWM_channel);
+    ledcWrite(MOTOR_PWM_channel, 0); // neutral position
+    pinMode(MOTOR_left_pin, OUTPUT);
+    pinMode(MOTOR_right_pin, OUTPUT);
+
 
     break;
   }
@@ -82,32 +89,38 @@ void Steer::direction(int direction)
   case SERVO:
   {
     int dutyCycle = map(direction, -100, 100, steer_servo_min, steer_servo_max) + steer_servo_adjust; // Duty cycle range for 1ms to 2ms
-    ledcWrite(pwmChannel, dutyCycle);
+    ledcWrite(SERVO_pwmChannel, dutyCycle);
     break;
   }
 
   case MOTOR:
   {
-    int value = abs(direction * MAX_PWM / 100);
+
+    int value = abs(direction * MOTOR_MAX_PWM / 100);
+
     // Serial.print("Steer:");
     // Serial.println(value);
     if (direction < 0)
     {
       // LEFT
-      digitalWrite(STEER_left_pin, HIGH);
-      digitalWrite(STEER_right_pin, LOW);
-      ledcWrite(STEER_PWM_channel, value);
+
+      digitalWrite(MOTOR_left_pin, HIGH);
+      digitalWrite(MOTOR_right_pin, LOW);
+      ledcWrite(MOTOR_PWM_channel, value);
+
     }
     else if (direction > 0)
     {
       // RIGHT
-      digitalWrite(STEER_left_pin, LOW);
-      digitalWrite(STEER_right_pin, HIGH);
-      ledcWrite(STEER_PWM_channel, value);
+
+      digitalWrite(MOTOR_left_pin, LOW);
+      digitalWrite(MOTOR_right_pin, HIGH);
+      ledcWrite(MOTOR_PWM_channel, value);
     }
     else
     {
-      ledcWrite(STEER_PWM_channel, 0);
+      ledcWrite(MOTOR_PWM_channel, 0);
+
     }
 
     break;
