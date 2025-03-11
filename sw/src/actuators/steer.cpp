@@ -4,6 +4,7 @@
 #include <actuators/motor.h>
 #include <variables/setget.h>
 
+
 const int MOTOR_enable_pin = 33;
 const int MOTOR_left_pin = 27;
 const int MOTOR_right_pin = 23;
@@ -20,6 +21,7 @@ const int MOTOR_PWM_freq = 5000;     // Frequency for PWM signal
 const int MOTOR_resolution = 10; // Resolution for PWM signal
 const int MOTOR_MAX_PWM = pow(2, MOTOR_resolution) - 1;
 const int MOTOR_PWM_channel = 1;
+
 
 Config conf2;
 
@@ -54,12 +56,14 @@ void Steer ::Begin()
   }
   case MOTOR:
   {
+
     ledcSetup(MOTOR_PWM_channel, MOTOR_PWM_freq, MOTOR_resolution);
     // Attach the pin to the PWM channel
     ledcAttachPin(MOTOR_enable_pin, MOTOR_PWM_channel);
     ledcWrite(MOTOR_PWM_channel, 0); // neutral position
     pinMode(MOTOR_left_pin, OUTPUT);
     pinMode(MOTOR_right_pin, OUTPUT);
+
 
     break;
   }
@@ -91,19 +95,24 @@ void Steer::direction(int direction)
 
   case MOTOR:
   {
+
     int value = abs(direction * MOTOR_MAX_PWM / 100);
+
     // Serial.print("Steer:");
     // Serial.println(value);
     if (direction < 0)
     {
       // LEFT
+
       digitalWrite(MOTOR_left_pin, HIGH);
       digitalWrite(MOTOR_right_pin, LOW);
       ledcWrite(MOTOR_PWM_channel, value);
+
     }
     else if (direction > 0)
     {
       // RIGHT
+
       digitalWrite(MOTOR_left_pin, LOW);
       digitalWrite(MOTOR_right_pin, HIGH);
       ledcWrite(MOTOR_PWM_channel, value);
@@ -111,6 +120,7 @@ void Steer::direction(int direction)
     else
     {
       ledcWrite(MOTOR_PWM_channel, 0);
+
     }
 
     break;
