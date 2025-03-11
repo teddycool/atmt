@@ -5,6 +5,7 @@ Config conf;
 void setup() {
   Serial.begin(57600);
   Serial.println("initiated");
+  conf.Begin();
 }
 
 void loop() {

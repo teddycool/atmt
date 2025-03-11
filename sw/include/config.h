@@ -4,8 +4,6 @@
 
 #include <Arduino.h>
 
-
-
 enum motorType_t
 {
     SINGLE,
@@ -21,10 +19,9 @@ enum steerType_t
 class Config
 {
 private:
+public:
     uint64_t ID = 0;
     String NAME;
-
-public:
     Config(void);
     void Begin(void);
 
