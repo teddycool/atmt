@@ -88,26 +88,24 @@ void Steer::direction(int direction)
 
   case MOTOR:
   {
-    int value = abs(direction * MAX_PWM / 100);
-    // Serial.print("Steer:");
-    // Serial.println(value);
+   
     if (direction < 0)
     {
       // LEFT
       digitalWrite(STEER_left_pin, HIGH);
       digitalWrite(STEER_right_pin, LOW);
-      ledcWrite(STEER_PWM_channel, value);
+      digitalWrite(STEER_enable_pin, HIGH);
     }
     else if (direction > 0)
     {
       // RIGHT
       digitalWrite(STEER_left_pin, LOW);
       digitalWrite(STEER_right_pin, HIGH);
-      ledcWrite(STEER_PWM_channel, value);
+      digitalWrite(STEER_enable_pin, HIGH);    
     }
     else
     {
-      ledcWrite(STEER_PWM_channel, 0);
+      digitalWrite(STEER_enable_pin, LOW);    
     }
 
     break;
