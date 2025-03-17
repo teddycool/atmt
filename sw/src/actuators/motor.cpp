@@ -17,7 +17,7 @@
 #define MOTOR_PWM_FREQUENCY 5000 // this can be increased later, but hainv an audiable frquency helps the debug phase
                                  // the L293 might be able to handle all the way up to 20000, but 10-12000 should be enough
 
-//motorType_t motorType;
+// motorType_t motorType;
 
 // left or single
 uint8_t enable_ch1_pin = 0;
@@ -62,8 +62,33 @@ Motor::Motor()
     // we are using separat motors for left and right side, providing more power
     // acting as an electrical differential, and allowing for steering enhancement
     // by also using different throttle on left and right side, both for drive and brake.
+    enable_ch1_pin = ENABLE_ch1_PIN;
+    forward_ch1_pin = FORWARD_ch1_PIN;
+    reverse_ch1_pin = REVERSE_ch1_PIN;
+    enable_ch2_pin = ENABLE_ch2_PIN;
+    forward_ch2_pin = FORWARD_ch2_PIN;
+    reverse_ch2_pin = REVERSE_ch2_PIN;
+    // set-up PWM on ENABLE channel, and start with 0 duty cycle
 
-    //----- NOT YET IMPLEMENTED ------
+    // set up pins and start with breaks on
+    digitalWrite(forward_ch1_pin, LOW);
+    digitalWrite(reverse_ch1_pin, LOW);
+    pinMode(forward_ch1_pin, OUTPUT);
+    pinMode(reverse_ch1_pin, OUTPUT);
+    // Initialize motor PWM (5 kHz)
+    ledcSetup(LEFT_MOTOR_PWM_CHANNEL, MOTOR_PWM_FREQUENCY, 8); // Channel 0, 5 kHz frequency, 8-bit resolution
+    ledcAttachPin(enable_ch1_pin, LEFT_MOTOR_PWM_CHANNEL);     // Attach motorPin to PWM channel 0
+    ledcWrite(LEFT_MOTOR_PWM_CHANNEL, 0);
+
+    // set up pins and start with breaks on
+    digitalWrite(forward_ch2_pin, LOW);
+    digitalWrite(reverse_ch2_pin, LOW);
+    pinMode(forward_ch2_pin, OUTPUT);
+    pinMode(reverse_ch2_pin, OUTPUT);
+    // Initialize motor PWM (5 kHz)
+    ledcSetup(RIGHT_MOTOR_PWM_CHANNEL, MOTOR_PWM_FREQUENCY, 8); // Channel 0, 5 kHz frequency, 8-bit resolution
+    ledcAttachPin(enable_ch2_pin, RIGHT_MOTOR_PWM_CHANNEL);     // Attach motorPin to PWM channel 0
+    ledcWrite(RIGHT_MOTOR_PWM_CHANNEL, 0);
 
     break;
 
@@ -77,9 +102,40 @@ void Motor::driving(int speed, int balance)
 {
   if (motorType == DIFFERENTIAL)
   {
-    // not yet implemented
+    // drive both motors the same.
+    // to implement differential drive based on steering
+    if (0 == speed)
+    {
+      ledcWrite(LEFT_MOTOR_PWM_CHANNEL, 0);
+      ledcWrite(RIGHT_MOTOR_PWM_CHANNEL, 0);
+      // free wheel is automatic since thre enable signal is missing we do not need to change
+      // the FORWARD or REVERSE pins
+    }
+    if (speed > 100)
+      return;
+    if (speed < -100)
+      return;
+    if (speed > 0)
+    {
+      digitalWrite(FORWARD_ch1_PIN, HIGH);
+      digitalWrite(REVERSE_ch1_PIN, LOW);
+      ledcWrite(LEFT_MOTOR_PWM_CHANNEL, (int)((long)speed * 255L / 100));
+      digitalWrite(FORWARD_ch2_PIN, HIGH);
+      digitalWrite(REVERSE_ch2_PIN, LOW);
+      ledcWrite(RIGHT_MOTOR_PWM_CHANNEL, (int)((long)speed * 255L / 100));
+    }
+    if (speed < 0)
+    {
+
+      digitalWrite(FORWARD_ch1_PIN, LOW);
+      digitalWrite(REVERSE_ch1_PIN, HIGH);
+      ledcWrite(LEFT_MOTOR_PWM_CHANNEL, abs((int)((long)speed * 255L / 100)));
+      digitalWrite(FORWARD_ch2_PIN, LOW);
+      digitalWrite(REVERSE_ch2_PIN, HIGH);
+      ledcWrite(RIGHT_MOTOR_PWM_CHANNEL, abs((int)((long)speed * 255L / 100)));
+    }
   }
-  else  //MOTORTYPE IS SINGLE meaning that right and left are driven the same
+  else // MOTORTYPE IS SINGLE meaning that right and left are driven the same
   {
     // SINGLE
     // bvalance to be ignored in single mode
