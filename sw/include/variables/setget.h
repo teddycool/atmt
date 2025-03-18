@@ -32,6 +32,13 @@ typedef enum {
     calcXpos,      // mm
     calcYpos,      // mm
     steerDirection,     //-100 to +100 wheel direction
+    //>>> Robot - DRIVER
+    driver_driverActivity,
+    driver_desired_direction,
+    driver_desired_turn,
+    driver_desired_speed,
+    driver_desired_distance,
+    //<<< Robot - DRIVER
     NUM_VARS
 } VarNames;
 
