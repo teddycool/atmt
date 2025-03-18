@@ -52,22 +52,22 @@ void setup() {
 void loop() {
   // Continuously toggle GPIO pin 1 for testing
   Serial.println("ON");
-  i2cDevice.writeGPIO(7, true);
+  i2cDevice.writeGPIO(7, true);  //LED
   vTaskDelay(pdMS_TO_TICKS(270));
-  //i2cDevice.writeGPIO(8,true);
-  vTaskDelay(pdMS_TO_TICKS(270));
+  i2cDevice.writeGPIO(8,true);
+  //vTaskDelay(pdMS_TO_TICKS(270));
   //i2cDevice.writeGPIO(9, true);
-  vTaskDelay(pdMS_TO_TICKS(270));
-  i2cDevice.writeGPIO(0,true);
-  vTaskDelay(pdMS_TO_TICKS(270));
+  //vTaskDelay(pdMS_TO_TICKS(270));
+  i2cDevice.writeGPIO(0,true);   //full beam
+  vTaskDelay(pdMS_TO_TICKS(200));
   Serial.println("OFF");
   i2cDevice.writeGPIO(7, false);
-  vTaskDelay(pdMS_TO_TICKS(270));
+  //vTaskDelay(pdMS_TO_TICKS(270));
   //i2cDevice.writeGPIO(8,false);
-  vTaskDelay(pdMS_TO_TICKS(270));
+  //vTaskDelay(pdMS_TO_TICKS(270));
   //i2cDevice.writeGPIO(9, false);
-  vTaskDelay(pdMS_TO_TICKS(270));
+  //vTaskDelay(pdMS_TO_TICKS(270));
   i2cDevice.writeGPIO(0,false);
-  vTaskDelay(pdMS_TO_TICKS(270));
+  vTaskDelay(pdMS_TO_TICKS(700));
   
 }
