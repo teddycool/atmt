@@ -51,11 +51,10 @@
 #define TRIGGER_PIN4 19 //Rear
 #define ECHO_PIN4 18
 
-#
 
 // Light (Neopixel)
-#define LIGHT_PIN 14
-#define LIGHT_NUM_LEDS 4
+#define LIGHT_PIN 32
+#define LIGHT_NUM_LEDS 1
 
 #define SDA_PIN 21
 #define SCL_PIN 22

@@ -25,6 +25,11 @@ void setup()
     Serial.begin(57600);
    
     Serial.println("Starting setup");
+    uint64_t chipId = ESP.getEfuseMac();
+	Serial.println();
+	Serial.println("******************************************************");
+	Serial.print("ESP32 Unique Chip ID (MAC): ");
+	Serial.println(chipId, HEX);  // Print the ESP32 EFUSE MAC address in hexadecimal format
     globalVar_init();
     vTaskDelay(pdMS_TO_TICKS(100));
     asens.Begin();

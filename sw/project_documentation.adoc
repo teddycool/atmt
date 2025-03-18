@@ -1,0 +1,227 @@
+= Project Documentation
+Author: Your Name
+Date: {docdate}
+
+== 1. Overview
+Provide a brief overview of the project, its purpose, and its main components.
+
+== 2. Class Diagrams
+Include class diagrams for each part of the project. For example:
+
+.Config Class Diagram
+image::config_class_diagram.png[Config Class Diagram]
+
+.Motor Class Diagram
+image::motor_class_diagram.png[Motor Class Diagram]
+
+.Steer Class Diagram
+image::steer_class_diagram.png[Steer Class Diagram]
+
+== 3. Class Descriptions
+Provide detailed descriptions of each class, including its attributes and methods.
+
+=== Config Class
+[source,cpp]
+----
+class Config {
+public:
+    Config();
+    void Begin();
+    motorType_t get_motorType();
+    steerType_t get_steerType();
+    boolean get_servoReverse();
+    int get_steer_servo_min();
+    int get_steer_servo_max();
+    int get_steer_servo_adjust();
+
+private:
+    motorType_t motorType;
+    steerType_t steerType;
+    boolean servoReverse;
+    int steer_servo_min;
+    int steer_servo_max;
+    int steer_servo_adjust;
+    uint64_t ID;
+    String NAME;
+};
+----
+
+*Attributes*:
+- `motorType`: Represents the type of motor.
+- `steerType`: Represents the type of steering.
+- `servoReverse`: Boolean indicating if the servo is reversed.
+- `steer_servo_min`: Minimum value for the steering servo.
+- `steer_servo_max`: Maximum value for the steering servo.
+- `steer_servo_adjust`: Adjustment value for the steering servo.
+- `ID`: Unique identifier for the device.
+- `NAME`: Name of the device.
+
+*Methods*:
+- `Config()`: Constructor.
+- `Begin()`: Initializes the configuration based on the device ID.
+- `get_motorType()`: Returns the motor type.
+- `get_steerType()`: Returns the steering type.
+- `get_servoReverse()`: Returns if the servo is reversed.
+- `get_steer_servo_min()`: Returns the minimum value for the steering servo.
+- `get_steer_servo_max()`: Returns the maximum value for the steering servo.
+- `get_steer_servo_adjust()`: Returns the adjustment value for the steering servo.
+
+=== Motor Class
+[source,cpp]
+----
+class Motor {
+public:
+    Motor();
+    void Begin();
+    void setSpeed(int speed);
+    int getSpeed();
+
+private:
+    int speed;
+};
+----
+
+*Attributes*:
+- `speed`: Represents the speed of the motor.
+
+*Methods*:
+- `Motor()`: Constructor.
+- `Begin()`: Initializes the motor.
+- `setSpeed(int speed)`: Sets the speed of the motor.
+- `getSpeed()`: Returns the current speed of the motor.
+
+=== Steer Class
+[source,cpp]
+----
+class Steer {
+public:
+    Steer();
+    void Begin();
+    void setAngle(int angle);
+    int getAngle();
+
+private:
+    int angle;
+};
+----
+
+*Attributes*:
+- `angle`: Represents the angle of the steering.
+
+*Methods*:
+- `Steer()`: Constructor.
+- `Begin()`: Initializes the steering.
+- `setAngle(int angle)`: Sets the angle of the steering.
+- `getAngle()`: Returns the current angle of the steering.
+
+== 4. Code Snippets
+Include relevant code snippets to provide context for the class diagrams and descriptions.
+
+.Example Config Class
+[source,cpp]
+----
+void Config::Begin(void) {
+    ID = ESP.getEfuseMac();
+    Serial.println("-----------------------");
+    Serial.print("This device has id: ");
+    Serial.println(ID, HEX);
+
+    switch (ID) {
+        case 0xE0DE4C08B764: // PAT03
+            NAME = "PAT03";
+            Serial.println("Configures PAT03");
+            motorType = SINGLE;
+            steerType = SERVO;
+            steer_servo_min = 60;
+            steer_servo_max = 105;
+            steer_servo_adjust = 5;
+            break;
+        case 0xB4328A0A8AB4: // PÄR01
+            NAME = "PÄR01";
+            Serial.println("Configures PÄR01");
+            motorType = SINGLE;
+            steerType = MOTOR;
+            steer_servo_min = 60;
+            steer_servo_max = 105;
+            steer_servo_adjust = 5;
+            break;
+        case 0xFC318A0A8AB4: // PÄR02
+            NAME = "PÄR02";
+            Serial.println("Configures PÄR02");
+            motorType = SINGLE;
+            steerType = MOTOR;
+            steer_servo_min = 60;
+            steer_servo_max = 105;
+            steer_servo_adjust = 5;
+            break;
+        default:
+            Serial.println("Unknown vehicle, default config");
+            steerType = MOTOR;
+            break;
+    }
+}
+----
+
+.Example Motor Class
+[source,cpp]
+----
+Motor::Motor() : speed(0) {}
+
+void Motor::Begin() {
+    // Initialize motor
+    Serial.println("Motor initialized");
+}
+
+void Motor::setSpeed(int speed) {
+    this->speed = speed;
+    Serial.print("Motor speed set to: ");
+    Serial.println(speed);
+}
+
+int Motor::getSpeed() {
+    return speed;
+}
+----
+
+.Example Steer Class
+[source,cpp]
+----
+Steer::Steer() : angle(0) {}
+
+void Steer::Begin() {
+    // Initialize steering
+    Serial.println("Steering initialized");
+}
+
+void Steer::setAngle(int angle) {
+    this->angle = angle;
+    Serial.print("Steering angle set to: ");
+    Serial.println(angle);
+}
+
+int Steer::getAngle() {
+    return angle;
+}
+----
+
+== Tools for Creating Class Diagrams
+- **Visual Paradigm**: A professional tool for creating UML diagrams.
+- **Lucidchart**: An online diagramming tool.
+- **draw.io**: A free online diagramming tool.
+
+== Example Class Diagram
+Here is an example of how you can create a class diagram using draw.io:
+
+1. Go to https://app.diagrams.net/.
+2. Create a new diagram and select "UML Class Diagram" as the template.
+3. Add classes, attributes, and methods based on your code.
+4. Save the diagram and export it as an image.
+
+== Example Document Structure
+1. **Title Page**: Project Title, Author, Date.
+2. **Table of Contents**: Automatically generated based on the document structure.
+3. **Introduction**: Overview of the project.
+4. **Class Diagrams**: Images of the class diagrams.
+5. **Class Descriptions**: Detailed descriptions of each class.
+6. **Code Snippets**: Relevant code snippets with explanations.
+7. **Conclusion**: Summary of the project.

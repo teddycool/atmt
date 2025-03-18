@@ -36,7 +36,7 @@ void Steer ::Begin()
   {
   case SERVO:
   {
-    Serial.println("SERVO");
+    Serial.println("SERVO-STEERING");
     steer_servo_min = conf2.get_steer_servo_min();
     steer_servo_max = conf2.get_steer_servo_max();
     steer_servo_adjust = conf2.get_steer_servo_adjust();
@@ -52,11 +52,10 @@ void Steer ::Begin()
   }
   case MOTOR:
   {
+    Serial.println("MOTOR-STEERING");
     pinMode(MOTOR_left_pin, OUTPUT);
     pinMode(MOTOR_right_pin, OUTPUT);
     pinMode(MOTOR_enable_pin, OUTPUT);
-
-
     break;
   }
   default:
