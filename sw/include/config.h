@@ -13,7 +13,8 @@ enum motorType_t
 enum steerType_t
 {
     SERVO,
-    MOTOR
+    MOTOR,
+    MOTOR_PWM
 };
 
 class Config

@@ -24,7 +24,8 @@ private:
 public:
   void Right();
   void Left();
-  void Stop();
+  void Straight();
+  void Stop();  //Depreciated, Stop is not relevant with Steer, use Straight indr´tead, or direction(0);
 };
 
 #endif

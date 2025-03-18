@@ -91,7 +91,7 @@ void displaySensorDetails(void)
   Serial.println(" uT");
   Serial.println("------------------------------------");
   Serial.println("");
-  delay(500);
+  vTaskDelay(pdMS_TO_TICKS(500));
 }
 
 
