@@ -134,14 +134,14 @@ void Steer::direction(int direction)
       // LEFT
       digitalWrite(MOTOR_left_pin, HIGH);
       digitalWrite(MOTOR_right_pin, LOW);
-      digitalWrite(MOTOR_enable_pin, HIGH);
+      ledcWrite(MOTOR_PWM_channel, value);
     }
     else if (direction > 0)
     {
       // RIGHT
       digitalWrite(MOTOR_left_pin, LOW);
       digitalWrite(MOTOR_right_pin, HIGH);
-      digitalWrite(MOTOR_enable_pin, HIGH);
+      ledcWrite(MOTOR_PWM_channel, value);
     }
     else
     {
