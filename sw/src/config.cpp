@@ -18,11 +18,20 @@ void Config::Begin(void)
 
     switch (ID)
     {
-    case 0xE0DE4C08B764: // PAT03
+    case 0xE0DE4C08B764: // PAT03 (4x2)
                          // Here we set the global config variables for this truck
         NAME = "PAT03";
         Serial.println("Configures PAT03");
         motorType = SINGLE;
+        steerType = SERVO;
+        steer_servo_min = 60;
+        steer_servo_max = 105;
+        steer_servo_adjust = 5;
+        break;
+
+    case 0xCC328A0A8AB4: // PAT04  (6x4)
+        Serial.println("COnfigure PAT04");
+        motorType = DIFFERENTIAL;
         steerType = SERVO;
         steer_servo_min = 60;
         steer_servo_max = 105;
@@ -35,9 +44,6 @@ void Config::Begin(void)
         Serial.println("Configures PÄR01");
         motorType = SINGLE;
         steerType = MOTOR;
-        steer_servo_min = 60;
-        steer_servo_max = 105;
-        steer_servo_adjust = 5;
         break;
 
     case 0xFC318A0A8AB4: // PÄR02
@@ -46,13 +52,11 @@ void Config::Begin(void)
         Serial.println("Configures PÄR02");
         motorType = SINGLE;
         steerType = MOTOR;
-        steer_servo_min = 60;
-        steer_servo_max = 105;
-        steer_servo_adjust = 5;
         break;
 
     default:
         Serial.println("Unknown vehicle, default config");
+        motorType = SINGLE;
         steerType = MOTOR;
         break;
     }
