@@ -39,8 +39,8 @@ void Config::Begin(void)
         break;
 
     default:
-        Serial.println("Unknown vehicle, default config");
-        steerType = SERVO;
+    Serial.println("Unknown vehicle, default config");
+    steerType = MOTOR;
         break;
     }
 };
