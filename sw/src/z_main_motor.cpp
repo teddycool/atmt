@@ -25,6 +25,8 @@ void setup()
   // Initialize serial communication for debugging
   Serial.begin(57600);
 
+  
+
 
   //globalVar_init();
 
