@@ -47,40 +47,35 @@ void mqttMessageCallback(char *topic, byte *payload, unsigned int length)
 
 	Serial.print("Message: ");
 	Serial.println(message);
+	 // Parse the message as JSON
+	 StaticJsonDocument<200> jsonDoc;
+	 DeserializationError error = deserializeJson(jsonDoc, message);
+ 
+	 if (error)
+	 {
+		 Serial.print("Failed to parse JSON: ");
+		 Serial.println(error.c_str());
+		 return;
+	 }
 
-	// Convert the string to an integer
-	int value = message.toInt();
+	 // Access JSON values
+	 if (jsonDoc.containsKey("motor"))
+	 {
+		 int motorSpeed = jsonDoc["motor"];
+		 Serial.print("Setting motor speed to: ");
+		 Serial.println(motorSpeed);
+		 motor.driving(motorSpeed); // Assuming `motor.driving(int)` is a valid method
+	 }
 
-	// Print the integer value
-	Serial.print("Converted integer: ");
-	Serial.println(value);
-
-	// Example: Use the integer value
-	if (String(topic) == chipid + "/motor")
-	{
-		Serial.print("Setting motor speed to: ");
-		Serial.println(value);
-		motor.driving(value); // Assuming `motor.setSpeed(int)` is a valid method
-	}
-
-	// Example: Use the integer value
-	if (String(topic) == chipid + "/steer")
-	{
-		Serial.print("Setting motor speed to: ");
-		Serial.println(value);
-		if (message == "left")
-		{
-			steer.Left(); // Assuming `motor.setSpeed(int)` is a valid method
-		}
-		if (message == "right")
-		{
-			steer.Right();
-		}
-		if (message == "stop")
-		{
-			steer.Stop();
-		}
-	}
+	 if (jsonDoc.containsKey("direction"))
+	 {
+		 int direction = jsonDoc["direction"];
+		 Serial.print("Setting steer direction to: ");
+		 Serial.println(steerDirection);
+ 
+		 steer.direction(direction);
+	 }
+	
 }
 
 
@@ -130,8 +125,7 @@ void setup()
 	mqtt.send("test", "Hello World");
 
 	// Subscribe to a topic
-	mqtt.subscribe("motor");
-	mqtt.subscribe("steer");
+	mqtt.subscribe("control");
 
 	delay(1000);
 	//
@@ -160,7 +154,7 @@ void loop()
     // Send the JSON string via MQTT
     mqtt.send("distance", jsonString);
 	// Delay for 500ms
-    vTaskDelay(pdMS_TO_TICKS(500));
+   // vTaskDelay(pdMS_TO_TICKS(500));
 
 	if(globalVar_get(rawDistFront, &age)< 15){
 		motor.driving(0);
