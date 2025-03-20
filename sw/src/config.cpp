@@ -41,9 +41,13 @@ void Config::Begin(void)
     case 0xB4328A0A8AB4: // PÄR01
                          // Here we set the global config variables for this truck
         NAME = "PÄR01";
-        Serial.println("Configures PÄR01");
+        Serial.println("Configures PÄR01 starts");
         motorType = SINGLE;
         steerType = MOTOR;
+        steer_servo_min = 60;
+        steer_servo_max = 105;
+        steer_servo_adjust = 5;
+        Serial.println("Configures PÄR01 finished");
         break;
 
     case 0xFC318A0A8AB4: // PÄR02

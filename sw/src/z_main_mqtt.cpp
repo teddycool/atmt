@@ -10,7 +10,7 @@
 #include <sensors/usensor.h>
 
 String chipid;
-//Steer steer;
+Steer steer;
 Motor motor;
 Mqtt mqtt;
 Usensor ultraSound;
@@ -63,20 +63,24 @@ void mqttMessageCallback(char *topic, byte *payload, unsigned int length)
 		motor.driving(value); // Assuming `motor.setSpeed(int)` is a valid method
 	}
 
-	// // Example: Use the integer value
-	// if (String(topic) == chipid + "/steer")
-	// {
-	// 	Serial.print("Setting motor speed to: ");
-	// 	Serial.println(value);
-	// 	if (message == "left")
-	// 	{
-	// 		steer.Left(); // Assuming `motor.setSpeed(int)` is a valid method
-	// 	}
-	// 	if (message == "right")
-	// 	{
-	// 		steer.Right();
-	// 	}
-	// }
+	// Example: Use the integer value
+	if (String(topic) == chipid + "/steer")
+	{
+		Serial.print("Setting motor speed to: ");
+		Serial.println(value);
+		if (message == "left")
+		{
+			steer.Left(); // Assuming `motor.setSpeed(int)` is a valid method
+		}
+		if (message == "right")
+		{
+			steer.Right();
+		}
+		if (message == "stop")
+		{
+			steer.Stop();
+		}
+	}
 }
 
 
@@ -87,22 +91,6 @@ void setup()
 	uint64_t chipIdHex = ESP.getEfuseMac();
 	chipid = String((uint32_t)(chipIdHex >> 32), HEX) + String((uint32_t)chipIdHex, HEX);
 
-	//steer.Begin();
-	globalVar_init();
-	Serial.println("Steer initiated)");
-	vTaskDelay(pdMS_TO_TICKS(1000));
-
-	Serial.println();
-	Serial.println("******************************************************");
-	Serial.print("ESP32 Unique Chip ID (MAC): ");
-	Serial.println(chipid);
-	Serial.println("******************************************************");
-
-	ultraSound.open(TRIGGER_PIN, ECHO_PIN, rawDistFront);
-	ultraSound.open(TRIGGER_PIN2, ECHO_PIN2, rawDistLeft);
-	ultraSound.open(TRIGGER_PIN3, ECHO_PIN3, rawDistRight);
-	ultraSound.open(TRIGGER_PIN4, ECHO_PIN4, rawDistBack);
-
 	// Connect to WiFi
 	WiFi.begin(ssid, password);
 	while (WiFi.status() != WL_CONNECTED)
@@ -112,6 +100,27 @@ void setup()
 	}
 	Serial.println("Connected to WiFi");
 	// Here we should add a debug print of all sensor values before we start running to make sure everything is working.
+
+	
+	globalVar_init();
+    steer.Begin();
+	vTaskDelay(pdMS_TO_TICKS(500));
+
+	Serial.println("Steer initiated)");
+	vTaskDelay(pdMS_TO_TICKS(500));
+
+	Serial.println();
+	Serial.println("******************************************************");
+	Serial.print("ESP32 Unique Chip ID (MAC): ");
+	Serial.println(chipid);
+	Serial.println("******************************************************");
+
+	ultraSound.open(TRIGGER_PIN, ECHO_PIN, rawDistFront);
+	ultraSound.open(TRIGGER_PIN2, ECHO_PIN2, rawDistRight);
+	ultraSound.open(TRIGGER_PIN3, ECHO_PIN3, rawDistLeft);
+	ultraSound.open(TRIGGER_PIN4, ECHO_PIN4, rawDistBack);
+
+	
 
 	mqtt.init(chipid);
 
@@ -133,9 +142,33 @@ void loop()
 
 	mqtt.loop();
 
-	mqtt.send("front", String(globalVar_get(rawDistBack, &age)));
-	mqtt.send("left", String(globalVar_get(rawDistLeft, &age)));
-	mqtt.send("right", String(globalVar_get(rawDistRight, &age)));
-	mqtt.send("back", String(globalVar_get(rawDistBack, &age)));
-	vTaskDelay(pdMS_TO_TICKS(500));
+
+
+	    // Create a JSON object
+    StaticJsonDocument<200> jsonDoc;
+
+    // Add sensor values to the JSON object
+    jsonDoc["front"] = globalVar_get(rawDistFront, &age);
+    jsonDoc["left"] = globalVar_get(rawDistLeft, &age);
+    jsonDoc["right"] = globalVar_get(rawDistRight, &age);
+    jsonDoc["back"] = globalVar_get(rawDistBack, &age);
+
+    // Serialize the JSON object to a string
+    String jsonString;
+    serializeJson(jsonDoc, jsonString);
+
+    // Send the JSON string via MQTT
+    mqtt.send("distance", jsonString);
+	// Delay for 500ms
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+	if(globalVar_get(rawDistFront, &age)< 15){
+		motor.driving(0);
+	}
+
+	if(globalVar_get(rawDistBack, &age)< 15){
+		motor.driving(0);
+	}
+
+
 }

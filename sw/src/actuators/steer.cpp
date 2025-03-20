@@ -32,6 +32,8 @@ void Steer ::Begin()
 {
   globalVar_set(steerDirection, 0);
   steerType = conf2.get_steerType();
+  Serial.println("Steer type: ");
+  Serial.println(steerType);
 
   switch (steerType)
 
