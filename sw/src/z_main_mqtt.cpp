@@ -154,7 +154,7 @@ void loop()
     // Send the JSON string via MQTT
     mqtt.send("distance", jsonString);
 	// Delay for 500ms
-    vTaskDelay(pdMS_TO_TICKS(500));
+   // vTaskDelay(pdMS_TO_TICKS(500));
 
 	if(globalVar_get(rawDistFront, &age)< 15){
 		motor.driving(0);
