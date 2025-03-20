@@ -6,13 +6,21 @@ MQTT="mosquitto_pub"
 STATE_MOTOR=0
 STATE_DIRECTION=0
 #VEHICLE_ID="b4328a0a8ab4"
+steer_right=10
+steer_left=-${steer_right}
 
 
 key_function() {
     case $1 in
         q|Q) echo "Quitting..."; exit ;;
         a|A)  echo "You pressed A left"; 
-              STATE_DIRECTION=-100
+              if [ ${STATE_DIRECTION} -ge 0 ]
+              then
+                STATE_DIRECTION=${steer_left}
+              elif [ ${STATE_DIRECTION} -gt -100 ]
+              then
+                let "STATE_DIRECTION += steer_left"
+              fi
               ;;
         s|S) echo "You pressed S stop/reverse"; 
               if [ $STATE_MOTOR -eq "0" ]
@@ -35,7 +43,13 @@ key_function() {
               ;;
 
         d|D) echo "You pressed C right"; 
-              STATE_DIRECTION=100
+              if [ ${STATE_DIRECTION} -le 0 ]
+              then
+                STATE_DIRECTION=${steer_right}
+              elif [ ${STATE_DIRECTION} -lt 100 ]
+              then
+                let "STATE_DIRECTION += steer_right"
+              fi
               ;;
         *) echo "You pressed: $1" ;;
     esac
