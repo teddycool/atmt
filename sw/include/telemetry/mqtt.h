@@ -12,13 +12,13 @@ public:
     void send(const String& topic, const String& message);
     void subscribe(const String& topic);
     void loop();
+    void setCallback(std::function<void(char *, byte *, unsigned int)> callback); // Add this
 
 private:
     WiFiClient wifiClient;
     PubSubClient mqttClient;
     String chipId;
     void connect();
-    static void mqttCallback(char* topic, byte* payload, unsigned int length);
 };
 
 #endif // MQTT_H

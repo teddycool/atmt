@@ -1,11 +1,9 @@
 #include "telemetry/mqtt.h"
 #include <secrets.h>
-#include <Arduino.h>
 
 Mqtt::Mqtt() : mqttClient(wifiClient)
 {
     mqttClient.setServer(mqtt_server, atoi(mqtt_port));
-    //   mqttClient.setCallback(mqttCallback);
 }
 
 void Mqtt::init(String chipId)
@@ -43,10 +41,11 @@ void Mqtt::send(const String &topic, const String &message)
 {
     if (!mqttClient.connected())
     {
-        connect();
-    }
+        connect();    }
+    
     mqttClient.publish((Mqtt::chipId + "/" + topic).c_str(), message.c_str());
     mqttClient.loop();
+    Serial.println("Sent message to MQTT => topic: " + topic + " message: " +message);
 }
 
 void Mqtt::loop()
@@ -54,14 +53,8 @@ void Mqtt::loop()
     mqttClient.loop();
 }
 
-void Mqtt::mqttCallback(char *topic, byte *payload, unsigned int length)
+
+void Mqtt::setCallback(std::function<void(char *, byte *, unsigned int)> callback)
 {
-    Serial.print("Message arrived [");
-    Serial.print(topic);
-    Serial.print("] ");
-    for (unsigned int i = 0; i < length; i++)
-    {
-        Serial.print((char)payload[i]);
-    }
-    Serial.println();
+    mqttClient.setCallback(callback);
 }
