@@ -58,6 +58,16 @@ void Config::Begin(void)
         steerType = MOTOR;
         break;
 
+    case 0x38504720F540: // JCA01
+        NAME = "JCA01";
+        Serial.println("Configures PÄR02");
+        motorType = DIFFERENTIAL;
+        steerType = SERVO;
+        steer_servo_min = 60;
+        steer_servo_max = 105;
+        steer_servo_adjust = 5;
+        break;
+
     default:
         Serial.println("Unknown vehicle, default config");
         motorType = SINGLE;
