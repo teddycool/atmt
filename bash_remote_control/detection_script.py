@@ -1,13 +1,40 @@
 from ultralytics import YOLO
 import cv2
 import numpy as np
+import paho.mqtt.client as mqtt
+import json
+
+# Define the broker address and port
+broker = "192.168.2.2"  # Replace with your broker's address
+port = 1883  # Default MQTT port
+
+# ESP ID
+PAR01="4328a0a8ab4"
+JCA01="8504720f540"
+
+# Define the topic and message
+topic = JCA01+"/control"
+
+# Define the payload 
+payload_dict = { "motor": 0, "direction":0}
+motor_value = 0
+direction_value = 0
+
+# Create an MQTT client instance
+client = mqtt.Client()
+
+# Connect to the broker
+client.connect(broker, port)
 
 # Load the YOLOv8 model
 model = YOLO('yolov8n.pt')
 
 # Define the class IDs you want to detect
-# For example, person (0), car (2), and dog (16)
+# bottle (39), cup (41), apple (47), cell phone (67) and toothbrush (79)
 target_classes = [39,41,47,67,79]
+
+forward_class = [39,41]
+stop_class = [47,67,79]
 
 # Initialize the webcam
 cap = cv2.VideoCapture(0)
@@ -30,6 +57,10 @@ while True:
             
             # Check if the detected object is in our target classes
             if cls in target_classes:
+                if cls in forward_class:
+                    motor_value=100
+                if cls in stop_class:
+                    motor_value=0
                 # Get the bounding box coordinates
                 x1, y1, x2, y2 = box.xyxy[0]
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
@@ -41,6 +72,10 @@ while True:
                 conf = float(box.conf)
                 label = f"{model.names[cls]} {conf:.2f}"
                 cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+                payload_dict["motor"]=motor_value
+                payload_dict["direction"]=direction_value
+                result = client.publish(topic, json.dumps(payload_dict))
 
     # Display the frame
     cv2.imshow("Object Detection", frame)
