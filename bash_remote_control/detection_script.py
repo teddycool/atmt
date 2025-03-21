@@ -9,8 +9,8 @@ broker = "192.168.2.2"  # Replace with your broker's address
 port = 1883  # Default MQTT port
 
 # ESP ID
-PAR01="4328a0a8ab4"
-JCA01="8504720f540"
+PAR01="b4328a0a8ab4"
+JCA01="38504720f540"
 
 # Define the topic and message
 topic = JCA01+"/control"
@@ -75,6 +75,7 @@ while True:
 
                 payload_dict["motor"]=motor_value
                 payload_dict["direction"]=direction_value
+       #         payload_dict["topic"]=topic
                 result = client.publish(topic, json.dumps(payload_dict))
 
     # Display the frame
