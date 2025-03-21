@@ -156,11 +156,11 @@ void loop()
 	// Delay for 500ms
    // vTaskDelay(pdMS_TO_TICKS(500));
 
-	if(globalVar_get(rawDistFront, &age)< 15){
+	if(globalVar_get(rawDistFront, &age)< 20){
 		motor.driving(0);
 	}
 
-	if(globalVar_get(rawDistBack, &age)< 15){
+	if(globalVar_get(rawDistBack, &age)< 20){
 		motor.driving(0);
 	}
 
