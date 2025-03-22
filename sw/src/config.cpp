@@ -1,4 +1,5 @@
 #include <config.h>
+#include <variables/setget.h>
 
 motorType_t motorType;
 steerType_t steerType;
@@ -7,85 +8,69 @@ int steer_servo_min = 51;
 int steer_servo_max = 102;
 int steer_servo_adjust = 0;
 
-Config::Config(void) {};
+bool Config_initiated = false;
+uint64_t Config_vehicle_ID = 0;
+String Config_vehicle_NAME;
 
-void Config::Begin(void)
+void Config_Begin(void)
+
 {
-    ID = ESP.getEfuseMac();
-    Serial.println("-----------------------");
-    Serial.print("This device has id: ");
-    Serial.println(ID, HEX);
-
-    switch (ID)
+    // It would not be a problem if this call was repeated, but best to use the same design here.
+    if (!Config_initiated)
     {
-    case 0xE0DE4C08B764: // PAT03 (4x2)
-                         // Here we set the global config variables for this truck
-        NAME = "PAT03";
-        Serial.println("Configures PAT03");
-        motorType = SINGLE;
-        steerType = SERVO;
-        steer_servo_min = 60;
-        steer_servo_max = 105;
-        steer_servo_adjust = 5;
-        break;
+        Setget_Begin();
+        // Default values
+        Setget_Set(vehicle_motorType, SINGLE);
+        Setget_Set(vehicle_steerType, MOTOR);
+        Setget_Set(vehicle_steerServoMin, 51);
+        Setget_Set(vehicle_steerServoMax, 102);
+        Setget_Set(vehicle_steerServoOffset, 0);
+        Setget_Set(vehicle_steerServoRerverse, false);
+        Config_vehicle_ID = ESP.getEfuseMac();
 
-    case 0xCC328A0A8AB4: // PAT04  (6x4)
-        Serial.println("COnfigure PAT04");
-        motorType = DIFFERENTIAL;
-        steerType = SERVO;
-        steer_servo_min = 60;
-        steer_servo_max = 105;
-        steer_servo_adjust = 5;
-        break;
+        switch (Config_vehicle_ID)
+        {
+        case 0xE0DE4C08B764: // PAT03 (4x2)
+                             // Here we set the global config variables for this truck
+            Config_vehicle_NAME = "PAT03";
+            Setget_Set(vehicle_motorType, SINGLE);
+            Setget_Set(vehicle_steerType, SERVO);
+            Setget_Set(vehicle_steerServoMin, 60);
+            Setget_Set(vehicle_steerServoMax, 105);
+            Setget_Set(vehicle_steerServoOffset, 5);
+            Setget_Set(vehicle_steerServoRerverse, false);
+            break;
 
-    case 0xB4328A0A8AB4: // PÄR01
-                         // Here we set the global config variables for this truck
-        NAME = "PÄR01";
-        Serial.println("Configures PÄR01");
-        motorType = SINGLE;
-        steerType = MOTOR;
-        break;
+        case 0xCC328A0A8AB4: // PAT04  (6x4)
+            Config_vehicle_NAME = "PAT04";
+            Setget_Set(vehicle_motorType, DIFFERENTIAL);
+            Setget_Set(vehicle_steerType, SERVO);
+            Setget_Set(vehicle_steerServoMin, 60);
+            Setget_Set(vehicle_steerServoMax, 105);
+            Setget_Set(vehicle_steerServoOffset, 5);
+            Setget_Set(vehicle_steerServoRerverse, false);
+            break;
 
-    case 0xFC318A0A8AB4: // PÄR02
-                         // Here we set the global config variables for this truck
-        NAME = "PÄR02";
-        Serial.println("Configures PÄR02");
-        motorType = SINGLE;
-        steerType = MOTOR;
-        break;
+        case 0xB4328A0A8AB4: // PÄR01
+            // Here we set the global config variables for this truck
+            Config_vehicle_NAME = "PÄR01";
+            Setget_Set(vehicle_motorType, SINGLE);
+            Setget_Set(vehicle_steerType, MOTOR);
+            break;
 
-    default:
-        Serial.println("Unknown vehicle, default config");
-        motorType = SINGLE;
-        steerType = MOTOR;
-        break;
+        case 0xFC318A0A8AB4: // PÄR02
+            // Here we set the global config variables for this truck
+            Config_vehicle_NAME = "PÄR02";
+            Setget_Set(vehicle_motorType, SINGLE);
+            Setget_Set(vehicle_steerType, MOTOR);
+            break;
+
+        default:
+            Config_vehicle_NAME = "NN";
+            Setget_Set(vehicle_motorType, SINGLE);
+            Setget_Set(vehicle_steerType, MOTOR);
+            break;
+        }
+        Config_initiated = true;
     }
 };
-motorType_t Config::get_motorType(void)
-{
-    return motorType;
-};
-steerType_t Config::get_steerType(void)
-{
-    return steerType;
-}
-
-boolean Config::get_servoReverse(void)
-{
-    return servoReverse;
-}
-
-int Config::get_steer_servo_min(void)
-{
-    return steer_servo_min;
-}
-
-int Config::get_steer_servo_max(void)
-{
-    return steer_servo_max;
-}
-
-int Config::get_steer_servo_adjust(void)
-{
-    return steer_servo_adjust;
-}

@@ -17,21 +17,20 @@ enum steerType_t
     MOTOR_PWM
 };
 
-class Config
-{
-private:
-public:
-    uint64_t ID = 0;
-    String NAME;
-    Config(void);
-    void Begin(void);
 
+
+    extern uint64_t Config_vehicle_ID;
+    extern String Config_vehicle_NAME;
+
+    void Config_Begin(void);
+
+    /*String Conig_VehicleName(void);
     motorType_t get_motorType(void);
     steerType_t get_steerType(void);
     boolean get_servoReverse(void);
     int get_steer_servo_min(void);
     int get_steer_servo_max(void);
     int get_steer_servo_adjust(void);
-};
+    */
 
 #endif

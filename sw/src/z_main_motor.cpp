@@ -2,12 +2,10 @@
 #include <variables/setget.h>
 #include <actuators/motor.h>
 
-
-//#define PWM
+// #define PWM
 
 // Ultrasound number and pins
 // Motor
-
 
 //  Laser Lidar ToF __________________________
 /*#define VL53L0X_REG_IDENTIFICATION_MODEL_ID 0xc0
@@ -18,16 +16,12 @@
 
 #define VL53L0X_ADDRESS 0x29 */
 
-Motor drive ;
-
 void setup()
 {
   // Initialize serial communication for debugging
   Serial.begin(57600);
-
-
-  //globalVar_init();
-
+  Serial.println("Initiating");
+  Motor_Begin();
 
   vTaskDelay(pdMS_TO_TICKS(100));
   //----------------------------------------------------------------------------------------------------------------
@@ -35,8 +29,21 @@ void setup()
 
 void loop()
 {
-   vTaskDelay(pdMS_TO_TICKS(1000));
-   drive.driving(100);
-   vTaskDelay(pdMS_TO_TICKS(1000));
-   drive.driving(-100);
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  Serial.println("Forward");
+  Motor_Drive(100);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+  Serial.println("Slowing down");
+  for (int i = 100; i -= 10; i > 0)
+  {
+    Motor_Drive(i);
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+  vTaskDelay(pdMS_TO_TICKS(200));
+  Serial.println("Reverse");
+  Motor_Drive(-100);
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  Serial.println("Break");
+  Motor_Brake(100);
+  vTaskDelay(pdMS_TO_TICKS(1000));
 };

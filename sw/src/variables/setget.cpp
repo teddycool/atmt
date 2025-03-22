@@ -1,5 +1,5 @@
 // #include "FreeRTOS.h"
-#include "variables/setget.h"
+#include <variables/setget.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
@@ -15,23 +15,32 @@ typedef struct
     xSemaphoreHandle sem;
 } GlobalVar;
 
+bool Setget_initiated = false;
+
 // Create an array of global variables
 GlobalVar vars[NUM_VARS];
 
-void globalVar_init()
+void Setget_Begin()
 {
-    // Initialize the semaphores for each variable
-    for (int i = 0; i < NUM_VARS; i++)
+    if (!Setget_initiated)
     {
-        vars[i].sem = xSemaphoreCreateMutex();
-        vars[i].total = 0;
-        vars[i].prev_value = 9999;
-        vars[i].org_value = 9999;
+        // Initialize the semaphores for each variable
+        for (int i = 0; i < NUM_VARS; i++)
+        {
+            vars[i].sem = xSemaphoreCreateMutex();
+            vars[i].total = 0;
+            vars[i].prev_value = 9999;
+            vars[i].org_value = 9999;
+        }
+        Setget_initiated = true;
     }
 }
 
-void globalVar_set(VarNames varName, long value)
+void Setget_Set(VarNames varName, long value)
 {
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
     xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
     if (vars[varName].org_value == 9999)
         vars[varName].org_value = value;
@@ -46,8 +55,11 @@ void globalVar_set(VarNames varName, long value)
     xSemaphoreGive(vars[varName].sem);
 }
 
-long globalVar_get(VarNames varName)
+long Setget_Get(VarNames varName)
 {
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
     long value;
     xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
     value = vars[varName].value;
@@ -55,42 +67,11 @@ long globalVar_get(VarNames varName)
     return value;
 }
 
-long globalVar_get_total(VarNames varName)
+long Setget_Get(VarNames varName, long *age)
 {
-    long value;
-    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
-    value = vars[varName].total;
-    xSemaphoreGive(vars[varName].sem);
-    return value;
-}
-
-void globalVar_reset_total(VarNames varName)
-{
-    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
-    vars[varName].total = 0;
-    xSemaphoreGive(vars[varName].sem);
-}
-
-long globalVar_get_delta(VarNames varName)
-{
-    long value;
-    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
-    value = vars[varName].value - vars[varName].prev_value;
-    xSemaphoreGive(vars[varName].sem);
-    return value;
-}
-
-long globalVar_get_TOT_delta(VarNames varName)
-{
-    long value;
-    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
-    value = vars[varName].value - vars[varName].org_value;
-    xSemaphoreGive(vars[varName].sem);
-    return value;
-}
-
-long globalVar_get(VarNames varName, long *age)
-{
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
     long value;
     xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
     value = vars[varName].value;
@@ -98,3 +79,51 @@ long globalVar_get(VarNames varName, long *age)
     xSemaphoreGive(vars[varName].sem);
     return value;
 }
+
+long Setget_GetTotal(VarNames varName)
+{
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
+    long value;
+    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
+    value = vars[varName].total;
+    xSemaphoreGive(vars[varName].sem);
+    return value;
+}
+
+void Setget_ResetTotal(VarNames varName)
+{
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
+    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
+    vars[varName].total = 0;
+    xSemaphoreGive(vars[varName].sem);
+}
+
+long Setget_GetDelta(VarNames varName)
+{
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
+    long value;
+    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
+    value = vars[varName].value - vars[varName].prev_value;
+    xSemaphoreGive(vars[varName].sem);
+    return value;
+}
+
+long Setget_GetTotalDelta(VarNames varName)
+{
+    if(!Setget_initiated){
+        Setget_Begin();
+    }
+    long value;
+    xSemaphoreTake(vars[varName].sem, portMAX_DELAY);
+    value = vars[varName].value - vars[varName].org_value;
+    xSemaphoreGive(vars[varName].sem);
+    return value;
+}
+
+
