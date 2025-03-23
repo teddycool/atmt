@@ -5,7 +5,7 @@ import paho.mqtt.client as mqtt
 import json
 
 # Define the broker address and port
-broker = "192.168.2.2"  # Replace with your broker's address
+broker = "192.168.1.80"  # Replace with your broker's address
 port = 1883  # Default MQTT port
 
 # ESP ID
