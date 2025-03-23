@@ -91,8 +91,12 @@ key_function() {
     
     if  $trigger 
     then
-      echo mosquitto_pub -h ${HOST} -t "${VEHICLE_ID}/control" -m "{\"motor\":${STATE_MOTOR}, \"direction\":${STATE_DIRECTION}}"
-      mosquitto_pub -h ${HOST} -t "${VEHICLE_ID}/control" -m "{\"motor\":${STATE_MOTOR}, \"direction\":${STATE_DIRECTION}}"
+      if mosquitto_pub -h ${HOST} -t "${VEHICLE_ID}/control" -m "{\"motor\":${STATE_MOTOR}, \"direction\":${STATE_DIRECTION}}"
+      then
+        echo mosquitto_pub -h ${HOST} -t "${VEHICLE_ID}/control" -m "{\"motor\":${STATE_MOTOR}, \"direction\":${STATE_DIRECTION}}"
+      else
+        echo "Could not send message to ${HOST}"
+      fi
     fi
     trigger=false
 }
