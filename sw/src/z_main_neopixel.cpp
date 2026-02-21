@@ -5,15 +5,15 @@
 NeoPixel neoPixel;
 
 void setup(){
-  neoPixel = NeoPixel(32, 1);
+  neoPixel = NeoPixel();
   Serial.begin(57600);
   Serial.println("Light test setup");
-  neoPixel.begin();
+  neoPixel.begin(32, 0);
     
 }
 
-
 void loop(){
+
     neoPixel.setPixelColor(0, NeoPixelColor::BLUE);
     Serial.println("Light test blue");
     neoPixel.show(); 

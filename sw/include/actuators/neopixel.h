@@ -14,9 +14,8 @@ enum class NeoPixelColor {
 
 class NeoPixel {
 public:
-    NeoPixel() = default;
-    NeoPixel(uint8_t pin, uint16_t numPixels);
-    void begin();
+    NeoPixel();
+    void begin(uint8_t pin, uint16_t numPixels);
     void setPixelColor(uint16_t pixel, NeoPixelColor color);
     void show();
 

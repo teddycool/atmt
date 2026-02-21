@@ -1,11 +1,14 @@
 #include "actuators/neopixel.h"
 
-NeoPixel::NeoPixel(uint8_t pin, uint16_t numPixels) : pin(pin), numPixels(numPixels) {
-    pixels = new uint8_t[numPixels * 3]; // Each pixel has 3 bytes (R, G, B)
-    memset(pixels, 0, numPixels * 3);   // Initialize all pixels to OFF
+NeoPixel::NeoPixel() {
+    
 }
 
-void NeoPixel::begin() {
+void NeoPixel::begin(uint8_t pini, uint16_t numPixelsi) {
+    pin = pini;
+    numPixels = numPixelsi;
+    pixels = new uint8_t[numPixels * 3]; // Each pixel has 3 bytes (R, G, B)
+    memset(pixels, 0, numPixels * 3);   // Initialize all pixels to OFF
     pinMode(pin, OUTPUT);
     digitalWrite(pin, LOW);
 }
@@ -40,25 +43,36 @@ void NeoPixel::setPixelColor(uint16_t pixel, NeoPixelColor color) {
 }
 
 void NeoPixel::show() {
+    Serial.println("Updating NeoPixel...");
     noInterrupts(); // Disable interrupts for precise timing
     for (uint16_t i = 0; i < numPixels; i++) {
+        Serial.print("Pixel ");
+        Serial.print(i);
+        Serial.print(": R=");
+        Serial.print(pixels[i * 3 + 1]);
+        Serial.print(", G=");
+        Serial.print(pixels[i * 3]);
+        Serial.print(", B=");
+        Serial.println(pixels[i * 3 + 2]);
         sendPixel(pixels[i * 3], pixels[i * 3 + 1], pixels[i * 3 + 2]);
     }
     interrupts(); // Re-enable interrupts
-    delayMicroseconds(50); // Latch signal
+    vTaskDelay(pdMS_TO_TICKS(0.5));; // Latch signal
 }
 
 void NeoPixel::sendBit(bool bitVal) {
     if (bitVal) {
+        // Send a "1" bit
         digitalWrite(pin, HIGH);
-        delayMicroseconds(0.8); // T1H: 800ns
+        delayMicroseconds(1); // Adjusted T1H: 1µs
         digitalWrite(pin, LOW);
-        delayMicroseconds(0.45); // T1L: 450ns
+        delayMicroseconds(0.5); // Adjusted T1L: 500ns
     } else {
+        // Send a "0" bit
         digitalWrite(pin, HIGH);
-        delayMicroseconds(0.4); // T0H: 400ns
+        delayMicroseconds(0.5); // Adjusted T0H: 500ns
         digitalWrite(pin, LOW);
-        delayMicroseconds(0.85); // T0L: 850ns
+        delayMicroseconds(1); // Adjusted T0L: 1µs
     }
 }
 
