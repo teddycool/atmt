@@ -1,18 +1,32 @@
 # An Autonomous Toy Monster Truck
 
-This project is undergoing a huge change and will be updated with new information and code. The project is now being prepared for ScaniaHack 2025 and use the progress we made in 2024 as a starting point.
+This project is undergoing a huge change and will be updated with new information and code. The project is now being prepared for ScaniaHack 2026 and use the progress we made in 2024 and 2025 as a starting point.
 
-The old branches are still available and can be used for reference but the main branch will be uppdated and restructured.
-
-The main branch is now protected and the only way to get changes in to it, is to make a pull-request from your own fork. I also removed the old access-rights to the repo but will add them again if needed.
-
-## Project overview
-The goal here is to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
-
-The 'brain' of the truck is an ESP32 and the sensors used are ultrasonic distance-sensors and acc/gyro/compass. This design was made to be simple and easy to both understand and replicate. I hope it will be a source of inspiration and give ideas for improvements. 
+The old branches are still available and can be used for reference but the scaniahack2026 branch will be uppdated and restructured and then merged back to main when the hack is over.
 
 
-## How to contribute?
+
+## The Main Project Overview
+The goal here was to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
+
+The 'brain' of the truck is an ESP32-wroom 8MB and the sensors used are ultrasonic distance-sensors and acc/gyro/compass. This design was made to be simple and easy to both understand and replicate. I hope it will be a source of inspiration and give ideas for improvements. 
+
+I now have 2 of these trucks and I am planning to use them for ScaniaHack 2026.
+
+## ScaniaHack 2026 goal (only software)
+Use the 2 working toy-trucks to build a cooperative, learning-based autonomous 'racing' system. The trucks will explore, map, optimize speed per segment, and avoid dynamic obstacles on a simple bounded track.
+
+By using the data collected from the trucks, we will implement a learning-based algorithm to optimize the racing strategy. The trucks will communicate with a backend server to share information about the track and their performance. The backend server will also be responsible for storing the data and providing insights into the performance of the trucks.
+
+Link to the complete project description for ScaniaHack 2026: link:doc/ESP32_Truck_Hackathon_Project_Description.pdf[ScaniaHack 2026 project description]
+
+### The simple track
+Built with 45x70mm wood-planks, the track will be a closed with a clear start/finish line and a few curves and obstacles.
+
+
+
+
+## How to contribute (not only code or ScaniaHack 2026) 
 
 (More details for the git-magic in the wiki)
 
