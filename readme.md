@@ -4,39 +4,41 @@ This project is undergoing a huge change and will be updated with new informatio
 
 The old branches are still available and can be used for reference but the scaniahack2026 branch will be uppdated and restructured and then merged back to main when the hack is over.
 
-## The Main Project Overview
-The goal here was to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck as a start and replaced the radio-control-pcb with my own designed control-system-pcb.
+## Repo Overview
+The goal with this repo was to make an 'autonomous' toy-monster-truck, using my own electronic design and software for the control system. To get a head-start I used a cheap radio-controlled toy-truck and replaced the radio-control-pcb with my own designed control-system-pcb.
 
 The 'brain' of the truck is an ESP32-wroom 8MB and the sensors used are ultrasonic distance-sensors and acc/gyro/compass. This design was made to be simple and easy to both understand and replicate. I hope it will be a source of inspiration and give ideas for improvements. 
 
 I now have 2 of these trucks and I am planning to use them for ScaniaHack 2026.
 
-## ScaniaHack 2026 goal (only software)
-Use the 2 working toy-trucks from last ScaniaHack to build a cooperative, learning-based autonomous 'racing' system. The trucks will explore, map, optimize speed, and avoid obstacles on a simple bounded track.
+This branch (ScaniaHack2026) is 'cleaned-up' with alot of updated informatiom and will focus on the work at this years ScaniaHack 19th and 20th of March.
 
-By using the data collected from the trucks, we will implement a learning-based algorithm to optimize the racing strategy. The trucks will communicate with a backend server to share information about the track and their performance. The backend server will also be responsible for storing the data and providing insights into the performance of the trucks.
+## ScaniaHack 2026 goal (only software)
+We will use the 2 toy-trucks to build a cooperative, learning-based autonomous 'racing' system. The trucks will explore, map, optimize speed, and avoid obstacles on a simple bounded track.
+
+By using the data collected from the trucks, we will implement a learning-based algorithm to optimize the racing strategy. The trucks will communicate with a backend server to share information about the track and their performance. The backend server(s) will also be responsible for storing the data and providing insights into the performance of the trucks.
 
 
 ![The ScaniaHack 2026 setup](posters/metwork-and-setup.png)
 
-Link to the complete project description for ScaniaHack 2026: [ScaniaHack 2026 project description](doc/ESP32_Truck_Hackathon_Project_Description.pdf)
+Link to the complete project description for ScaniaHack 2026: [ScaniaHack 2026 project description](ESP32_Truck_Hackathon_Project_Description.md)
 
 ### The simple track
 Built with 45x70mm wood-planks, the track is a closed loop with angled corners and a clear start/finish line (the narrowest part).
 
-![The simple track for ScaniaHack 2026](doc/images/rc-track-2.png)
-
 ### What we have
-* 2 working toy-trucks with the same hardware setup and 'ota' capabilities
-* A backend server for data collection, analysis and training of the learning-based algorithm
+* 2 working toy-trucks with the same hardware setup and with 'ota' capabilities
+* Backend servers for data collection, analysis and training of the learning-based algorithm
 * A simple track for testing and racing
-* Software components for sensors, basic control, data collection, and communication with the backend server
-* A server showing a dashboard with the telemetry
+* Software components for sensors, basic control, data collection, and communication with the backend servers
+* A dedicated server showing a dashboard with the telemetry
 
 ### What we need to implement
 * An updated control-loop that 'explores' the track
 * A backend 'training' that use the telemetry data to figure out the track geometry
-* An updated control-loop that uses the inf from backend to 'race' the track
+* An updated control-loop that uses the information from backend to 'race' the track and improve laptimes
+
+---
 
 ## How to contribute (not only code or ScaniaHack 2026) 
 
@@ -59,6 +61,7 @@ Built with 45x70mm wood-planks, the track is a closed loop with angled corners a
 
 ## Documentation
 
+* [**Complete Project Description**](ESP32_Truck_Hackathon_Project_Description.md) - Comprehensive ScaniaHack 2026 project overview
 * [Arduino OTA Process Guide](arduino-ota-process.md) - Complete guide for wireless firmware updates
 * [Kalman Filter Implementation](kalman_filter.md) - Sensor fusion and filtering algorithms
 * [EmbeddedSw Documentation](EmbeddedSw/README.md) - Main firmware documentation
@@ -67,27 +70,34 @@ Built with 45x70mm wood-planks, the track is a closed loop with angled corners a
 
 ## Repo layout:
 
-All sections are undergoing change and will be updated with new information and code. 
+Current repository structure and components:
 
-* doc: documentation and images, 
-  * A workdescription for the conversion
-  * A proposal for how to setup the work at ScaniaHack
-* hw: electronics hardware including:
-  * PCB layout and all the schematics in KiCAD format. 
-  * References to used components etc. 
-* toy-truck
-  * CAD models and 3d printables for some add-ons to the toy-truck chassi.
-* EmbeddedSw: this is the 'real' software and the VsCode project you should open in order to work with the code. To test different parts of the software we use 'environments' in the platformio.ini file.
-* arduino-ota-process.md: Complete guide for Over-The-Air firmware updates
-* kalman_filter.md: Implementation guide for sensor fusion algorithms
-* truck_telemetry_dashboard: Real-time web dashboard for monitoring truck data
-* remote: Remote control scripts and computer vision detection
-* hw-test-sw: software for testing the hardware, like hello world.
-* www: software for the backend web-server, like
-  * post log script
-  * view log script
+**Main Documentation (Root Level):**
+* **ESP32_Truck_Hackathon_Project_Description.md** - Complete ScaniaHack 2026 project overview
+* **arduino-ota-process.md** - Complete guide for Over-The-Air firmware updates
+* **kalman_filter.md** - Implementation guide for sensor fusion algorithms
 
-## Other uses:
+**Core Directories:**
+* **EmbeddedSw/** - Main ESP32 firmware (PlatformIO project) - open this folder in VS Code to work with the truck control code
+* **toy-truck/** - Hardware design and mechanical components
+  * **electronics/** - PCB schematics (KiCAD), component lists, and hardware documentation
+  * **Chassi-prep/** - CAD models and 3D printables for truck modifications
+* **truck_telemetry_dashboard/** - Real-time web dashboard for monitoring truck telemetry data
+* **remote/** - Manual control scripts and computer vision detection for remote operation
+* **www/** - Backend web server components
+  * PHP scripts for data logging and viewing
+  * Database interaction utilities
+
+**Supporting Materials:**
+* **doc/** - Project documentation, system diagrams, and reference images
+  * Architecture diagrams and project planning materials
+  * Phase 1 mapping documentation
+  * Historical work descriptions and conversion notes
+* **posters/** - Visual presentation materials and setup diagrams for ScaniaHack 2026
+
+---
+
+## Other uses of this repo:
 It is possible to use my PCB-design for an other type of vehicle or use the schematics and build any other sort of control-board. The ESP32 is a very versatile microcontroller and can be used for many different applications.
 
 ## Good links to get started with ESP32
@@ -114,12 +124,12 @@ Sometimes it works better if you power the pcb from the usb-port using a 3.3V ty
 
 ## Starting material from Biltema's toy-department
 
-Unfurthunatly this specific model is not sold anymore at Biltema but there are many other models at Biltema or elsewhere that can be used for this project. The most important thing is that the chassi is big enough to fit the new electronics and that the wheels are big enough to handle the terrain you want to drive on.
+Unfurthunatly this specific model is not sold anymore at Biltema but there are many other models at Biltema or elsewhere that can be used for this project. The most important thing is that the chassi is big enough to fit the new electronics and that the wheels are big enough to handle the terrain where you want to drive.
 
 ## Designing a new PCB formfactor
 
-You can of course also design a new PCB formfactor from the schematics provided. The KiCAD files in the `hw` directory include all the necessary components and connections. Feel free to modify the layout to better fit your specific needs or to improve the design. If you come up with a better design, please share it with the community by making a pull-request.
+You can of course also design a new PCB formfactor from the schematics provided. The KiCAD files in the `toy-truck/electronics` directory include all the necessary components and connections. Feel free to modify the layout to better fit your specific needs or to improve the design. If you come up with a better design, please share it with the community by making a pull-request.
 
-[Schematics for reference](hw/atmt-schematic-v3.pdf)
+[Schematics for reference](toy-truck/electronics/atmt-schematic-v3.pdf)
 
 ![Starters from Biltema toy-department](doc/images/20201212_103947.jpg)

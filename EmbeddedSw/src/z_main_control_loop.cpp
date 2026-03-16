@@ -4,9 +4,6 @@
 // - Run a simple state machine: IDLE / EXPLORE / RECOVER / STOP
 // - Apply basic wall-centering + obstacle avoidance
 // - Publish telemetry periodically
-//
-// Replace the TODO sections with your real sensor, motor, steering, and MQTT code.
-
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
