@@ -7,7 +7,6 @@ ESP32-WROOM-32UE-N16
 
 https://www.mouser.se/c/?q=ESP32-WROOM-32UE-N16
 
-
 ## Motor-control
 
 L293D (SMD)
@@ -47,10 +46,9 @@ https://www.electrokit.com/upload/product/40352/40352989/LP2989.pdf
 * Analog voltage measurement for battery energy level
 * Status-led/neopixel
 
+## Material cost pcb HW version 2 with components (approx SEK, 2024 prices)
 
-## Material cost pcb HW version 2 with components (approx sek)
-
-Around 300 sek divided as:
+Around 300 SEK divided as:
 
 * PCB (Aisler.net):  75
 * ESP32 (mouser.se): 40
@@ -58,9 +56,9 @@ Around 300 sek divided as:
 * LP2989 (electrokit.se): 60
 * Pinheaders, smd-button, capacitors etc...
 
-## Material cost pcb HW version 3 with components (approx sek)
+## Material cost pcb HW version 3 with components (approx SEK, 2024 prices)
 
-Around 350 sek divided as:
+Around 350 SEK divided as:
 
 * PCB (Aisler.net):  75
 * ESP32 (mouser.se): 40
@@ -80,6 +78,3 @@ Around 350 sek divided as:
 ### Programming interface
 
 Something like this: https://www.electrokit.com/beefy-3-ftdi-breakout with some cables like this to fit the connector on the pcb: https://www.electrokit.com/labbsladd-40-pin-30cm-hona/hane
-
-
-

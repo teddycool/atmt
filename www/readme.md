@@ -4,10 +4,8 @@ The server is located at 192.168.2.2 in the local HackNet1.
 
 Instructions for mounting fileshares in linux at http://192.168.2.2/
 
-
 ## The database tables
-#image:db-tables.png[]
-
+<!-- image:db-tables.png[] -->
 
 ## post_log.php
 Inserts data to the logging table

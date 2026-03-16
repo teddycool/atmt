@@ -2,7 +2,6 @@
 
 (With help from Github Copilot and the Kalman filter Wikipedia page)
 
-
 The Kalman filter is an algorithm that uses a series of measurements observed over time to estimate the state of a system. It is particularly useful for tracking the state of a system that is subject to noise and uncertainty. The Kalman filter is widely used in a variety of applications, including navigation, robotics, and signal processing.
 
 The Kalman filter works by combining two sources of information: predictions from a mathematical model of the system and measurements from sensors. The filter uses these predictions and measurements to estimate the state of the system and to update its estimate as new measurements become available.
@@ -13,7 +12,7 @@ The Kalman filter is an optimal estimator in the sense that it minimizes the mea
 
 The Kalman filter is a recursive algorithm, meaning that it can update its estimate of the system's state as new measurements become available. This makes the Kalman filter well-suited for real-time applications where new measurements are continuously being received.
 
-https://en.wikipedia.org/wiki/Kalman_filter  for more information on the Kalman filter.
+https://en.wikipedia.org/wiki/Kalman_filter for more information on the Kalman filter.
 
 ## Parameter values for the Kalman filter
 To determine the values for the Kalman filter parameters (`processNoise`, `measurementNoise`, `estimationError`, and `initialValue`), you typically need to consider the specific application and the characteristics of the system you are modeling. Here are some general guidelines:
@@ -33,7 +32,6 @@ This parameter represents the initial uncertainty in the estimate. If you have a
 
 This parameter represents the initial estimate of the state. This should be based on any prior knowledge you have about the system's state at the start.
 
-
 ## The GY-521 module 
 
 which contains the MPU-6050 sensor, is commonly used for measuring acceleration and gyroscopic data. The measurement noise values for such sensors can vary, but typical values for the MPU-6050 are as follows:
@@ -47,9 +45,11 @@ The noise level for the gyroscope is typically around 0.03 °/s/√Hz.
 
 These values can be used to estimate the measurement noise for your Kalman filter. However, the exact values may depend on your specific application and environment. Here is an example of how you might initialize the Kalman filter with these values:
 
- // Hypothetical values for the Kalman filter parameters for GY-521
-    float processNoise = 1.0f; // This value may need to be tuned based on your application
-    float measurementNoiseAccel = 0.002f; // Accelerometer noise
-    float measurementNoiseGyro = 0.03f; // Gyroscope noise
-    float estimationError = 1.0f; // Initial estimation error
-    float initialValue = 0.0f; // Initial value of the state
+```cpp
+// Hypothetical values for the Kalman filter parameters for GY-521
+float processNoise = 1.0f; // This value may need to be tuned based on your application
+float measurementNoiseAccel = 0.002f; // Accelerometer noise
+float measurementNoiseGyro = 0.03f; // Gyroscope noise
+float estimationError = 1.0f; // Initial estimation error
+float initialValue = 0.0f; // Initial value of the state
+```
