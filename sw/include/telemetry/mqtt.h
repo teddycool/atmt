@@ -12,6 +12,7 @@ public:
     void send(const String& topic, const String& message);
     void subscribe(const String& topic);
     void loop();
+    bool connected();  // Add connected status check
     void setCallback(std::function<void(char *, byte *, unsigned int)> callback); // Add this
 
 private:

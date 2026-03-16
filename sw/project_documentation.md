@@ -1,28 +1,35 @@
-= Project Documentation
-Author: Your Name
-Date: {docdate}
+# Project Documentation
 
-== 1. Overview
+**Author:** Your Name  
+**Date:** 2026-03-06
+
+## 1. Overview
+
 Provide a brief overview of the project, its purpose, and its main components.
 
-== 2. Class Diagrams
+## 2. Class Diagrams
+
 Include class diagrams for each part of the project. For example:
 
-.Config Class Diagram
-image::config_class_diagram.png[Config Class Diagram]
+**Config Class Diagram**
 
-.Motor Class Diagram
-image::motor_class_diagram.png[Motor Class Diagram]
+![Config Class Diagram](config_class_diagram.png)
 
-.Steer Class Diagram
-image::steer_class_diagram.png[Steer Class Diagram]
+**Motor Class Diagram**
 
-== 3. Class Descriptions
+![Motor Class Diagram](motor_class_diagram.png)
+
+**Steer Class Diagram**
+
+![Steer Class Diagram](steer_class_diagram.png)
+
+## 3. Class Descriptions
+
 Provide detailed descriptions of each class, including its attributes and methods.
 
-=== Config Class
-[source,cpp]
-----
+### Config Class
+
+```cpp
 class Config {
 public:
     Config();
@@ -44,9 +51,10 @@ private:
     uint64_t ID;
     String NAME;
 };
-----
+```
 
-*Attributes*:
+**Attributes**:
+
 - `motorType`: Represents the type of motor.
 - `steerType`: Represents the type of steering.
 - `servoReverse`: Boolean indicating if the servo is reversed.
@@ -56,7 +64,8 @@ private:
 - `ID`: Unique identifier for the device.
 - `NAME`: Name of the device.
 
-*Methods*:
+**Methods**:
+
 - `Config()`: Constructor.
 - `Begin()`: Initializes the configuration based on the device ID.
 - `get_motorType()`: Returns the motor type.
@@ -66,9 +75,9 @@ private:
 - `get_steer_servo_max()`: Returns the maximum value for the steering servo.
 - `get_steer_servo_adjust()`: Returns the adjustment value for the steering servo.
 
-=== Motor Class
-[source,cpp]
-----
+### Motor Class
+
+```cpp
 class Motor {
 public:
     Motor();
@@ -79,20 +88,22 @@ public:
 private:
     int speed;
 };
-----
+```
 
-*Attributes*:
+**Attributes**:
+
 - `speed`: Represents the speed of the motor.
 
-*Methods*:
+**Methods**:
+
 - `Motor()`: Constructor.
 - `Begin()`: Initializes the motor.
 - `setSpeed(int speed)`: Sets the speed of the motor.
 - `getSpeed()`: Returns the current speed of the motor.
 
-=== Steer Class
-[source,cpp]
-----
+### Steer Class
+
+```cpp
 class Steer {
 public:
     Steer();
@@ -103,23 +114,26 @@ public:
 private:
     int angle;
 };
-----
+```
 
-*Attributes*:
+**Attributes**:
+
 - `angle`: Represents the angle of the steering.
 
-*Methods*:
+**Methods**:
+
 - `Steer()`: Constructor.
 - `Begin()`: Initializes the steering.
 - `setAngle(int angle)`: Sets the angle of the steering.
 - `getAngle()`: Returns the current angle of the steering.
 
-== 4. Code Snippets
+## 4. Code Snippets
+
 Include relevant code snippets to provide context for the class diagrams and descriptions.
 
-.Example Config Class
-[source,cpp]
-----
+**Example Config Class**
+
+```cpp
 void Config::Begin(void) {
     ID = ESP.getEfuseMac();
     Serial.println("-----------------------");
@@ -160,11 +174,11 @@ void Config::Begin(void) {
             break;
     }
 }
-----
+```
 
-.Example Motor Class
-[source,cpp]
-----
+**Example Motor Class**
+
+```cpp
 Motor::Motor() : speed(0) {}
 
 void Motor::Begin() {
@@ -181,11 +195,11 @@ void Motor::setSpeed(int speed) {
 int Motor::getSpeed() {
     return speed;
 }
-----
+```
 
-.Example Steer Class
-[source,cpp]
-----
+**Example Steer Class**
+
+```cpp
 Steer::Steer() : angle(0) {}
 
 void Steer::Begin() {
@@ -202,14 +216,16 @@ void Steer::setAngle(int angle) {
 int Steer::getAngle() {
     return angle;
 }
-----
+```
 
-== Tools for Creating Class Diagrams
+## Tools for Creating Class Diagrams
+
 - **Visual Paradigm**: A professional tool for creating UML diagrams.
 - **Lucidchart**: An online diagramming tool.
 - **draw.io**: A free online diagramming tool.
 
-== Example Class Diagram
+## Example Class Diagram
+
 Here is an example of how you can create a class diagram using draw.io:
 
 1. Go to https://app.diagrams.net/.
@@ -217,7 +233,8 @@ Here is an example of how you can create a class diagram using draw.io:
 3. Add classes, attributes, and methods based on your code.
 4. Save the diagram and export it as an image.
 
-== Example Document Structure
+## Example Document Structure
+
 1. **Title Page**: Project Title, Author, Date.
 2. **Table of Contents**: Automatically generated based on the document structure.
 3. **Introduction**: Overview of the project.

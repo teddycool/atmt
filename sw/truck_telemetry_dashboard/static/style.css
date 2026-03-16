@@ -1,0 +1,550 @@
+/* Autonomous Truck Telemetry Dashboard Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.header-truck-icon {
+    width: 48px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    text-align: center;
+}
+
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-indicator.online {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-indicator.offline {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: block;
+}
+
+.status-indicator.online .indicator {
+    background: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
+}
+
+.status-indicator.offline .indicator {
+    background: #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+}
+
+.data-age {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Trucks Container */
+.trucks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.no-trucks-message {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+.truck-row {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+.truck-row-header {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 15px;
+    text-align: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.truck-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Vehicle Status */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.status-item label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-item span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.mode-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mode-badge.idle {
+    background: #e2e3e5;
+    color: #6c757d;
+}
+
+.mode-badge.explore {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.mode-badge.recover {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.mode-badge.stop {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Sensor Display */
+.sensor-display {
+    display: flex;
+    justify-content: center;
+}
+
+.sensor-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.sensor-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.sensor-bottom-row {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+}
+
+.sensor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    background: #f8f9fa;
+    min-width: 80px;
+    transition: all 0.3s ease;
+}
+
+.sensor label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+.sensor value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.sensor unit {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.sensor.close {
+    border-color: #dc3545;
+    background: #f8d7da;
+}
+
+.sensor.medium {
+    border-color: #ffc107;
+    background: #fff3cd;
+}
+
+.sensor.far {
+    border-color: #28a745;
+    background: #d4edda;
+}
+
+.sensor.compass {
+    border-color: #007bff;
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.truck-icon {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 140px;
+}
+
+.truck-icon img {
+    width: 100px;
+    height: 65px;
+    object-fit: contain;
+    filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
+    transition: transform 0.3s ease;
+}
+
+.truck-icon img:hover {
+    transform: scale(1.1);
+}
+
+/* Controls */
+.control-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.control-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.control-item label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.steering-indicator {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.steering-indicator.left {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.steering-indicator.right {
+    background: #ffe6cc;
+    color: #8b4513;
+}
+
+.steering-indicator.straight {
+    background: #d4edda;
+    color: #155724;
+}
+
+.boolean-indicator {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.boolean-indicator.true {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.boolean-indicator.false {
+    background: #d4edda;
+    color: #155724;
+}
+
+/* Navigation */
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.nav-item label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nav-item span {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+/* Telemetry Log */
+.telemetry-log {
+    grid-column: 1 / -1;
+    max-height: 400px;
+}
+
+.log-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+.history-entry {
+    display: grid;
+    grid-template-columns: 80px 1fr 2fr;
+    gap: 15px;
+    padding: 10px;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+}
+
+.history-entry:last-child {
+    border-bottom: none;
+}
+
+.history-entry .timestamp {
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.history-entry .mode {
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #0c5460;
+}
+
+.history-entry .details {
+    color: #495057;
+}
+
+.no-data {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .truck-cards {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .status-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .sensor-row {
+        gap: 15px;
+    }
+    
+    .trucks-container {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 20px 15px;
+    }
+    
+    .sensor-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .truck-row {
+        padding: 15px;
+    }
+    
+    .truck-cards {
+        gap: 10px;
+    }
+}
+
+/* Custom scrollbar */
+.log-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.log-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.log-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.log-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
