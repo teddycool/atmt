@@ -37,7 +37,7 @@ This system implements an autonomous truck capable of:
 ## 📁 Project Structure
 
 ```
-sw/
+EmbeddedSw/
 ├── src/
 │   ├── z_main_control_loop.cpp     # Main control loop
 │   ├── z_main_wifi_test.cpp        # Network connectivity test
