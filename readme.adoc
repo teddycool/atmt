@@ -14,14 +14,23 @@ The 'brain' of the truck is an ESP32-wroom 8MB and the sensors used are ultrason
 I now have 2 of these trucks and I am planning to use them for ScaniaHack 2026.
 
 ## ScaniaHack 2026 goal (only software)
-Use the 2 working toy-trucks to build a cooperative, learning-based autonomous 'racing' system. The trucks will explore, map, optimize speed per segment, and avoid dynamic obstacles on a simple bounded track.
+Use the 2 working toy-trucks from last ScaniaHack to build a cooperative, learning-based autonomous 'racing' system. The trucks will explore, map, optimize speed, and avoid obstacles on a simple bounded track.
 
 By using the data collected from the trucks, we will implement a learning-based algorithm to optimize the racing strategy. The trucks will communicate with a backend server to share information about the track and their performance. The backend server will also be responsible for storing the data and providing insights into the performance of the trucks.
 
 Link to the complete project description for ScaniaHack 2026: link:doc/ESP32_Truck_Hackathon_Project_Description.pdf[ScaniaHack 2026 project description]
 
 ### The simple track
-Built with 45x70mm wood-planks, the track will be a closed with a clear start/finish line and a few curves and obstacles.
+Built with 45x70mm wood-planks, the track is a closed loop with angled corners and a clear start/finish line (the narrowest part).
+
+image::doc/images/rc-track-2.png["The simple track for ScaniaHack 2026"]
+
+### What we have
+* 2 working toy-trucks with the same hardware setup and 'ota' capabilities
+* A backend server for data collection, analysis and training of the learning-based algorithm
+* A simple track for testing and racing
+* Software components for sensors, basic control, data collection, and communication with the backend server
+
 
 
 
