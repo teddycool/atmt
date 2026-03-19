@@ -1,5 +1,11 @@
 # Project History
 
+## 2026-03-19 — Added real-time path visualization to truck_simulator.py (ajuan)
+- Added `SimVisualizer` class to `truck_simulator.py`: matplotlib window with red room boundary, red obstacle rectangles, dashed steelblue path line, current-position dot. FuncAnimation at 150 ms; thread-safe with a lock.
+- Added `--visualize` CLI flag; matplotlib import guarded like paho-mqtt.
+- Refactored `run()`: when `--visualize`, simulation runs in a daemon thread and matplotlib owns the main thread. Without the flag, behaviour is identical to before.
+- No new files added.
+
 ## 2026-03-19 — Added SLAM to map_visualization.py (ajuan)
 - Implemented `OccupancyGrid`: 400×400 cells at 2 cm/cell, log-odds updates, Bresenham ray tracing.
 - Implemented `SLAMProcessor`: pose from payload x/y/heading (simulator) or dead-reckoned; one truck at a time.

@@ -9,6 +9,7 @@ import random
 import time
 import threading
 import argparse
+import importlib
 
 try:
     import paho.mqtt.client as mqtt
@@ -17,15 +18,24 @@ except ImportError:
     print("[WARN] paho-mqtt not installed. Run: pip install paho-mqtt")
     MQTT_AVAILABLE = False
 
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    import matplotlib.patches as mpatches
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    print("[WARN] matplotlib not installed. Run: pip install matplotlib")
+    MATPLOTLIB_AVAILABLE = False
+
 # ── Field & simulation constants ──────────────────────────────────────────────
 
 FIELD_WIDTH  = 120.0   # cm
 FIELD_HEIGHT = 240.0   # cm
 
-TRUCK_SPEED       = 0.5    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
+TRUCK_SPEED       = 1    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
 TURN_ANGLE        = 15.0   # degrees per tick when turning
-SENSOR_MAX_RANGE  = 150.0  # cm  (ultrasound max reading)
-SENSOR_NOISE_CM   = 0.5    # ±cm random noise on each sensor
+SENSOR_MAX_RANGE  = 750.0  # cm  (ultrasound max reading)
+SENSOR_NOISE_CM   = 5    # ±cm random noise on each sensor
 OBSTACLE_MARGIN   = 20.0   # cm  — turn when any front sensor is closer than this
 TICK_RATE_HZ      = 5      # simulation ticks per second (= MQTT publish rate)
 
@@ -343,6 +353,79 @@ class MQTTPublisher:
         print(f"[PUB] {topic}  {msg}")
 
 
+# ── Real-time visualizer ──────────────────────────────────────────────────────
+
+class SimVisualizer:
+    """Matplotlib window showing room boundary, obstacles, and live truck path.
+
+    Thread-safe: the sim thread calls update_pos(); matplotlib's FuncAnimation
+    reads it on the main thread.
+    """
+
+    REFRESH_MS = 150   # animation poll interval
+
+    def __init__(self, field_w, field_h, obstacles):
+        self._xs = []
+        self._ys = []
+        self._lock = threading.Lock()
+
+        fig_h = max(5, field_h / 30)
+        fig_w = max(3, field_w / 30)
+        self._fig, self._ax = plt.subplots(figsize=(fig_w, fig_h))
+        ax = self._ax
+
+        ax.set_xlim(-10, field_w + 10)
+        ax.set_ylim(-10, field_h + 10)
+        ax.set_aspect("equal")
+        ax.set_xlabel("x (cm)")
+        ax.set_ylabel("y (cm)")
+        ax.set_title("Truck Simulator — Live Path")
+
+        # Room boundary in red
+        ax.add_patch(mpatches.Rectangle(
+            (0, 0), field_w, field_h,
+            linewidth=2, edgecolor="red", facecolor="none",
+        ))
+
+        # Obstacles in red (lighter fill so the path shows through)
+        for ox, oy, ow, oh in obstacles:
+            ax.add_patch(mpatches.Rectangle(
+                (ox, oy), ow, oh,
+                linewidth=1.5, edgecolor="red", facecolor="#ffcccc",
+            ))
+
+        # Path (dashed line) and current-position dot
+        self._line, = ax.plot([], [], color="steelblue", linestyle="--",
+                              linewidth=1, alpha=0.7, label="path")
+        self._dot,  = ax.plot([], [], "o", color="steelblue", markersize=6)
+
+        ax.legend(loc="upper right", fontsize=8)
+
+        self._anim = animation.FuncAnimation(
+            self._fig, self._draw_frame, interval=self.REFRESH_MS, blit=True,
+        )
+
+    def update_pos(self, x, y):
+        """Called by the simulation thread after each tick."""
+        with self._lock:
+            self._xs.append(x)
+            self._ys.append(y)
+
+    def _draw_frame(self, _frame):
+        with self._lock:
+            xs = list(self._xs)
+            ys = list(self._ys)
+        self._line.set_data(xs, ys)
+        if xs:
+            self._dot.set_data([xs[-1]], [ys[-1]])
+        return self._line, self._dot
+
+    def show(self):
+        """Block the calling thread (must be main thread) until window is closed."""
+        plt.tight_layout()
+        plt.show()
+
+
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 STRATEGIES = {
@@ -351,7 +434,11 @@ STRATEGIES = {
 }
 
 
-def run(broker, port, dry_run, strategy_name):
+def run(broker, port, dry_run, strategy_name, visualize=False, no_obstacles=False):
+    global OBSTACLES
+    if no_obstacles:
+        OBSTACLES = []
+
     publisher = MQTTPublisher(broker, port) if not dry_run else None
     truck = Truck(strategy=STRATEGIES[strategy_name]())
     interval = 1.0 / TICK_RATE_HZ
@@ -361,27 +448,41 @@ def run(broker, port, dry_run, strategy_name):
           f"strategy={strategy_name}")
     print(f"[SIM] Publishing every {interval*1000:.0f} ms  (Ctrl-C to stop)\n")
 
-    last_pos_print = time.monotonic()
+    viz = SimVisualizer(FIELD_WIDTH, FIELD_HEIGHT, OBSTACLES) if visualize else None
 
-    try:
-        while True:
-            tick_start = time.monotonic()
-            truck.step()
-            payload = truck.payload()
+    def sim_loop():
+        last_pos_print = time.monotonic()
+        try:
+            while True:
+                tick_start = time.monotonic()
+                truck.step()
+                payload = truck.payload()
 
-            if publisher:
-                publisher.publish(MQTT_TOPIC, payload)
-            else:
-                print(json.dumps(payload))
+                if viz:
+                    viz.update_pos(truck.x, truck.y)
 
-            if tick_start - last_pos_print >= 1.0:
-                print(f"[POS] t={truck.t_ms/1000:.1f}s  x={truck.x:.1f} cm  y={truck.y:.1f} cm  heading={truck.heading:.1f}°")
-                last_pos_print = tick_start
+                if publisher:
+                    publisher.publish(MQTT_TOPIC, payload)
+                else:
+                    print(json.dumps(payload))
 
-            elapsed = time.monotonic() - tick_start
-            time.sleep(max(0.0, interval - elapsed))
-    except KeyboardInterrupt:
-        print("\n[SIM] Stopped.")
+                if tick_start - last_pos_print >= 1.0:
+                    print(f"[POS] t={truck.t_ms/1000:.1f}s  x={truck.x:.1f} cm  "
+                          f"y={truck.y:.1f} cm  heading={truck.heading:.1f}°")
+                    last_pos_print = tick_start
+
+                elapsed = time.monotonic() - tick_start
+                time.sleep(max(0.0, interval - elapsed))
+        except KeyboardInterrupt:
+            print("\n[SIM] Stopped.")
+
+    if viz:
+        # Matplotlib must own the main thread; simulation runs as a daemon thread.
+        t = threading.Thread(target=sim_loop, daemon=True)
+        t.start()
+        viz.show()   # blocks until window is closed
+    else:
+        sim_loop()
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -392,7 +493,17 @@ if __name__ == "__main__":
     parser.add_argument("--port",    default=MQTT_PORT, type=int, help="MQTT broker port")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print JSON to stdout instead of publishing to MQTT")
-    parser.add_argument("--strategy", default="reactive", choices=STRATEGIES,
-                        help="Explore strategy: reactive (default) or embedded")
+    parser.add_argument("--strategy", default="embedded", choices=STRATEGIES,
+                        help="Explore strategy: embedded (default) or reactive")
+    parser.add_argument("--visualize", action="store_true",
+                        help="Open a real-time matplotlib window showing the truck path")
+    parser.add_argument("--no-obstacles", action="store_true",
+                        help="Remove all obstacles from the field")
     args = parser.parse_args()
-    run(args.broker, args.port, args.dry_run, args.strategy)
+
+    if args.visualize and not MATPLOTLIB_AVAILABLE:
+        print("[ERROR] --visualize requires matplotlib. Run: pip install matplotlib")
+        raise SystemExit(1)
+
+    run(args.broker, args.port, args.dry_run, args.strategy, args.visualize,
+        args.no_obstacles)
