@@ -91,17 +91,48 @@ def sense(x, y, heading_deg, sensor_offset_deg):
     return round(max(0.0, min(SENSOR_MAX_RANGE, raw + noise)), 1)
 
 
+# ── Explore strategies ────────────────────────────────────────────────────────
+
+class ExploreStrategy:
+    """Base class for explore strategies. Subclasses implement step()."""
+
+    def step(self, truck, sensors):
+        """Mutate truck position/heading for one tick given sensor readings."""
+        raise NotImplementedError
+
+
+class ReactiveExplore(ExploreStrategy):
+    """Default strategy: drive forward, turn away from obstacles reactively."""
+
+    def __init__(self):
+        self.turning = 0          # -1 left, 0 straight, +1 right
+        self.turn_ticks_left = 0
+
+    def step(self, truck, sensors):
+        if self.turn_ticks_left > 0:
+            truck.heading = (truck.heading + self.turning * TURN_ANGLE) % 360
+            self.turn_ticks_left -= 1
+        elif sensors["uf"] < OBSTACLE_MARGIN:
+            self.turning = 1 if sensors["ur"] >= sensors["ul"] else -1
+            self.turn_ticks_left = random.randint(3, 8)
+        else:
+            angle = math.radians(truck.heading)
+            nx = truck.x + TRUCK_SPEED * math.cos(angle)
+            ny = truck.y + TRUCK_SPEED * math.sin(angle)
+            truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
+            truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
+
+
 # ── Truck state ───────────────────────────────────────────────────────────────
 
 class Truck:
-    def __init__(self):
+    def __init__(self, strategy=None):
         self.x = FIELD_WIDTH  / 2
         self.y = FIELD_HEIGHT / 2
         self.heading = random.uniform(0, 360)   # degrees, 0=East
         self.seq = 0
         self.t_ms = 0
-        self.turning = 0   # -1 left, 0 straight, +1 right
-        self.turn_ticks_left = 0
+        self.strategy = strategy or ReactiveExplore()
 
     def sensors(self):
         return {
@@ -114,25 +145,7 @@ class Truck:
     def step(self):
         """Advance one simulation tick."""
         s = self.sensors()
-
-        # ── Explore logic ──────────────────────────────────────────────────
-        if self.turn_ticks_left > 0:
-            # Keep turning
-            self.heading = (self.heading + self.turning * TURN_ANGLE) % 360
-            self.turn_ticks_left -= 1
-        elif s["uf"] < OBSTACLE_MARGIN:
-            # Obstacle ahead — decide turn direction based on which side is clearer
-            self.turning = 1 if s["ur"] >= s["ul"] else -1
-            self.turn_ticks_left = random.randint(3, 8)
-        else:
-            # Drive forward
-            angle = math.radians(self.heading)
-            nx = self.x + TRUCK_SPEED * math.cos(angle)
-            ny = self.y + TRUCK_SPEED * math.sin(angle)
-            # Clamp to field (treat boundary as wall)
-            self.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
-            self.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
-
+        self.strategy.step(self, s)
         self.seq  += 1
         self.t_ms += int(1000 / TICK_RATE_HZ)
 
