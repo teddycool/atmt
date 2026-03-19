@@ -36,88 +36,92 @@ volatile int num_sensors = 0;
 volatile int current_sensor = 0;
 volatile bool pulse_active = false; // indicate a pulse has been sent and no echo yet received.
 volatile long startTime;  //need to implement proper wrap around for this using nsigned and signed
+// ISR-safe handoff for distance measurement
+volatile int lastDistance = 199;
+volatile int lastDistanceSensor = -1;
+volatile bool distanceReady = false;
 
 void echoInterrupt()
 {
-
+    // Quick interrupt handler - minimize time spent here
     if (digitalRead(sensor[current_sensor].ECHO) == HIGH)
     {
-        /*Serial.print(" S");
-        Serial.print(current_sensor);
-        Serial.println("u ");*/
         pulse_active = true;
-
-        // The echo pin went from LOW to HIGH: start timing
         startTime = micros();
     }
     else
     {
-        /*Serial.print(" S");
-       Serial.print(current_sensor);
-       Serial.println("d ");*/
-        // long tmp = micros() - startTime ;
-        //  The echo pin went from HIGH to LOW: stop timing and calculate distance
         pulse_active = false;
-        long travelTime = micros() - startTime; // need to make this wrap around safe by the int - uint trick
+        long travelTime = micros() - startTime;
         int distance = travelTime / 29 / 2;     // in cm
         if (distance > 199)
             distance = 199;
-        globalVar_set(sensor[current_sensor].NAME, distance);
+        // Defer globalVar_set to task context (ISR-safe)
+        lastDistance = distance;
+        lastDistanceSensor = current_sensor;
+        distanceReady = true;
     }
 }
 
 static void TriggerTask(void *params)
 {
-    //  Serial.println("Distance sensor test...");
-    // Initialize trigger and echo pins
-
-    // Attach an interrupt to the echo pin
-    // attachInterrupt(digitalPinToInterrupt(echoPins[i]), echoInterrupt, CHANGE);
-
+    // Initialize - ensure we don't interfere with setup
+    vTaskDelay(pdMS_TO_TICKS(1000)); // Wait 1 second for system to stabilize
+    
     for (;;)
     {
-        // Serial.print(">");
+        // Apply any completed distance measurement from ISR
+        if (distanceReady && lastDistanceSensor >= 0 && lastDistanceSensor < num_sensors)
+        {
+            globalVar_set(sensor[lastDistanceSensor].NAME, lastDistance);
+            distanceReady = false;
+            lastDistanceSensor = -1;
+        }
         if (num_sensors > 0)
         {
+            // Check for timeout from previous pulse
             if (pulse_active)
             {
-                // vTaskDelay(pdMS_TO_TICKS(50)); // we have not yet reveived an echo from the previous trigger,
-                // set distance to 199 indicating unknown value
+                // Previous pulse timed out - mark as unknown
                 globalVar_set(sensor[current_sensor].NAME, 199);
+                pulse_active = false;
             }
+            
+            // Move to next sensor
             current_sensor++;
             if (current_sensor >= num_sensors)
             {
-                // Making sure we iterate between the sensors we have opened, returning to the first sensor to start over again
-                // maybe a for loop inside a loop would be more visual ans self explanatory?
-                // It would also be possible to build a more advanced scheduling algorithm, for instance that the first
-                // sensor registered would be be polled in between every other, to give it much higher resolution
-                //  Could make sense for the forward sensor if running at high speeds.
                 current_sensor = 0;
             }
-            // Initialize trigger and echo pins
+            
+            // Initialize pins for current sensor
             pinMode(sensor[current_sensor].TRIG, OUTPUT);
             pinMode(sensor[current_sensor].ECHO, INPUT);
-
-            // Attach an interrupt to the echo pin, the same task for all pins
-            // as we only run one sensor at a time that works great
+            
+            // Attach interrupt
             attachInterrupt(digitalPinToInterrupt(sensor[current_sensor].ECHO), echoInterrupt, CHANGE);
-
-            // Send a 10 microsecond pulse to start the sensor
+            
+            // Send trigger pulse
             pulse_active = true;
             digitalWrite(sensor[current_sensor].TRIG, HIGH);
             delayMicroseconds(10);
             digitalWrite(sensor[current_sensor].TRIG, LOW);
         }
-        // Wait for 50 ms before polling the next sensor
+        
+        // Wait with yielding to prevent starving other tasks
         vTaskDelay(pdMS_TO_TICKS(POLL_INTERVAL));
+        taskYIELD(); // Explicitly yield to other tasks
     }
 }
 
 Usensor::Usensor()
 {
-    // start the task that regularly will trigger the opened sensors
-    xTaskCreate(TriggerTask, "testsetup", 2000, NULL, 1, NULL);
+    // Create task with lower priority to avoid interfering with main loop
+    // Priority 1 is lower than default (usually 2-3), stack increased for safety
+    if (xTaskCreate(TriggerTask, "USensorTask", 2048, NULL, 0, NULL) != pdPASS) {
+        // Task creation failed - this prevents the race condition entirely
+        // Could add error handling here if needed
+    }
 }
 
 int Usensor::open(uint8_t trig, uint8_t echo, VarNames name)

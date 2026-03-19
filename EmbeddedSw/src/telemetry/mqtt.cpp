@@ -1,5 +1,6 @@
 #include "telemetry/mqtt.h"
 #include <secrets.h>
+#include <cstring>
 
 Mqtt::Mqtt() : mqttClient(wifiClient)
 {
@@ -9,17 +10,27 @@ Mqtt::Mqtt() : mqttClient(wifiClient)
     Serial.println("MQTT client buffer size set to 1024 bytes");
 }
 
-void Mqtt::init(String chipId)
+void Mqtt::init(const char* chipId)
 {
-    Mqtt::chipId = chipId;
+    if (!chipId) {
+        this->chipId[0] = '\0';
+        return;
+    }
+    strncpy(this->chipId, chipId, sizeof(this->chipId) - 1);
+    this->chipId[sizeof(this->chipId) - 1] = '\0';
 }
-void Mqtt::subscribe(const String &topic)
+void Mqtt::subscribe(const char* topic)
 {
     if (!mqttClient.connected())
     {
         connect();
     }
-    mqttClient.subscribe((Mqtt::chipId + "/" + topic).c_str());
+    if (!topic || this->chipId[0] == '\0') {
+        return;
+    }
+    char fullTopic[64];
+    snprintf(fullTopic, sizeof(fullTopic), "%s/%s", this->chipId, topic);
+    mqttClient.subscribe(fullTopic);
 }
 
 void Mqtt::connect()
@@ -27,7 +38,7 @@ void Mqtt::connect()
     while (!mqttClient.connected())
     {
         Serial.print("Connecting to MQTT...");
-        if (mqttClient.connect(Mqtt::chipId.c_str(), mqtt_user, mqtt_pass))
+        if (mqttClient.connect(this->chipId, mqtt_user, mqtt_pass))
         {
             Serial.println("connected");
         }
@@ -40,7 +51,7 @@ void Mqtt::connect()
     }
 }
 
-void Mqtt::send(const String &topic, const String &message)
+void Mqtt::send(const char* topic, const char* message)
 {
     if (!mqttClient.connected())
     {
@@ -51,17 +62,22 @@ void Mqtt::send(const String &topic, const String &message)
             return;
         }
     }
+
+    if (!topic || !message || this->chipId[0] == '\0') {
+        return;
+    }
+
+    char fullTopic[64];
+    snprintf(fullTopic, sizeof(fullTopic), "%s/%s", this->chipId, topic);
+    Serial.printf("Publishing to topic: %s (message length: %u)\n", fullTopic, (unsigned)strlen(message));
     
-    String fullTopic = Mqtt::chipId + "/" + topic;
-    Serial.println("Publishing to topic: " + fullTopic + " (message length: " + String(message.length()) + ")");
-    
-    bool success = mqttClient.publish(fullTopic.c_str(), message.c_str());
+    bool success = mqttClient.publish(fullTopic, message);
     mqttClient.loop();
     
     if (success) {
-        Serial.println("✅ MQTT publish successful => topic: " + topic);
+        Serial.printf("✅ MQTT publish successful => topic: %s\n", topic);
     } else {
-        Serial.println("❌ MQTT publish FAILED => topic: " + topic + " (connection state: " + String(mqttClient.state()) + ")");
+        Serial.printf("❌ MQTT publish FAILED => topic: %s (connection state: %d)\n", topic, mqttClient.state());
     }
 }
 
