@@ -105,6 +105,71 @@ MQTT_TOPIC   = f"{TRUCK_ID}/telemetry"
 
 # ── Geometry helpers ──────────────────────────────────────────────────────────
 
+def ray_segment_distance(ox, oy, dx, dy, x1, y1, x2, y2):
+    """Distance from ray (ox,oy)+(dx,dy)*t to segment, or inf."""
+    ex, ey = x2 - x1, y2 - y1
+    denom  = dx * ey - dy * ex
+    if abs(denom) < 1e-9:
+        return math.inf
+    t = ((x1 - ox) * ey - (y1 - oy) * ex) / denom
+    u = ((x1 - ox) * dy - (y1 - oy) * dx) / denom
+    return t if t > 1e-3 and 0.0 <= u <= 1.0 else math.inf
+
+
+def point_in_polygon(x, y, polygon):
+    """Ray-casting point-in-polygon test."""
+    inside, j = False, len(polygon) - 1
+    for i, (xi, yi) in enumerate(polygon):
+        xj, yj = polygon[j]
+        if ((yi > y) != (yj > y)) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            inside = not inside
+        j = i
+    return inside
+
+
+def _min_edge_dist(x, y, polygon):
+    """Minimum distance from (x,y) to any polygon edge."""
+    min_d, n = math.inf, len(polygon)
+    for i in range(n):
+        x1, y1 = polygon[i];  x2, y2 = polygon[(i + 1) % n]
+        ex, ey = x2 - x1, y2 - y1
+        seg2   = ex * ex + ey * ey
+        t      = max(0.0, min(1.0, ((x-x1)*ex + (y-y1)*ey) / seg2)) if seg2 > 1e-9 else 0.0
+        min_d  = min(min_d, math.hypot(x - x1 - t*ex, y - y1 - t*ey))
+    return min_d
+
+
+def clamp_to_room(ox, oy, nx, ny):
+    """Move (ox,oy)→(nx,ny), stopping 1 cm before the first room wall hit."""
+    dx, dy = nx - ox, ny - oy
+    dist   = math.hypot(dx, dy)
+    if dist < 1e-9:
+        return nx, ny
+    udx, udy = dx / dist, dy / dist
+    n     = len(ROOM_POLYGON)
+    min_t = dist
+    for i in range(n):
+        x1, y1 = ROOM_POLYGON[i]
+        x2, y2 = ROOM_POLYGON[(i + 1) % n]
+        t = ray_segment_distance(ox, oy, udx, udy, x1, y1, x2, y2)
+        if t < min_t:
+            min_t = t
+    safe_t = max(0.0, min_t - 1.0) if min_t < dist else dist
+    return ox + udx * safe_t, oy + udy * safe_t
+
+
+def random_point_in_room(margin=20.0, attempts=2000):
+    """Random point strictly inside ROOM_POLYGON, at least margin cm from walls."""
+    xs = [p[0] for p in ROOM_POLYGON];  ys = [p[1] for p in ROOM_POLYGON]
+    x_lo, x_hi = min(xs) + margin, max(xs) - margin
+    y_lo, y_hi = min(ys) + margin, max(ys) - margin
+    for _ in range(attempts):
+        x, y = random.uniform(x_lo, x_hi), random.uniform(y_lo, y_hi)
+        if point_in_polygon(x, y, ROOM_POLYGON) and _min_edge_dist(x, y, ROOM_POLYGON) >= margin:
+            return x, y
+    return sum(xs) / len(xs), sum(ys) / len(ys)  # centroid fallback
+
+
 def ray_aabb_distance(ox, oy, dx, dy, rx, ry, rw, rh):
     """Distance from ray origin (ox,oy) in direction (dx,dy) to AABB rect, or inf."""
     tmin, tmax = -math.inf, math.inf
@@ -129,15 +194,13 @@ def sense(x, y, heading_deg, sensor_offset_deg):
     angle = math.radians(heading_deg + sensor_offset_deg)
     dx, dy = math.cos(angle), math.sin(angle)
 
-    # Distance to field boundary walls — check all four wall planes as slabs
-    candidates = []
-    if abs(dx) > 1e-9:
-        t = (0 - x) / dx;          candidates.append(t)
-        t = (FIELD_WIDTH - x) / dx; candidates.append(t)
-    if abs(dy) > 1e-9:
-        t = (0 - y) / dy;           candidates.append(t)
-        t = (FIELD_HEIGHT - y) / dy; candidates.append(t)
-    wall_dist = min((t for t in candidates if t > 1e-3), default=SENSOR_MAX_RANGE)
+    # Distance to room boundary — check every polygon edge
+    n = len(ROOM_POLYGON)
+    wall_dist = min(
+        (ray_segment_distance(x, y, dx, dy, *ROOM_POLYGON[i], *ROOM_POLYGON[(i+1) % n])
+         for i in range(n)),
+        default=SENSOR_MAX_RANGE,
+    )
 
     # Distance to each obstacle
     obs_dist = min(
@@ -183,8 +246,7 @@ class ReactiveExplore(ExploreStrategy):
             angle = math.radians(truck.heading)
             nx = truck.x + TRUCK_SPEED * math.cos(angle)
             ny = truck.y + TRUCK_SPEED * math.sin(angle)
-            truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
-            truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
+            truck.x, truck.y = truck.clamp_position(nx, ny)
             truck.cmd_pwm   = 100
             truck.cmd_steer = "STRAIGHT"
 
@@ -249,8 +311,7 @@ class EmbeddedExplore(ExploreStrategy):
         angle = math.radians(truck.heading)
         nx = truck.x + dist * math.cos(angle)
         ny = truck.y + dist * math.sin(angle)
-        truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
-        truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
+        truck.x, truck.y = truck.clamp_position(nx, ny)
         truck.cmd_pwm   = round(speed_frac * 100)
         truck.cmd_steer = steer
 
@@ -322,8 +383,7 @@ START_MARGIN = 20.0   # cm from border — truck won't start closer than this
 
 class Truck:
     def __init__(self, strategy=None):
-        self.x = random.uniform(START_MARGIN, FIELD_WIDTH  - START_MARGIN)
-        self.y = random.uniform(START_MARGIN, FIELD_HEIGHT - START_MARGIN)
+        self.x, self.y = random_point_in_room(START_MARGIN)
         self.heading = random.uniform(0, 360)   # degrees, 0=East
         self.seq = 0
         self.t_ms = 0
@@ -343,6 +403,10 @@ class Truck:
         self._acc_x_ms2    = 0.0   # forward acceleration  (m/s²)
         self._acc_y_ms2    = 0.0   # lateral acceleration  (m/s²)
         self._yaw_rate_dps = 0.0   # yaw rate (deg/s)
+
+    def clamp_position(self, nx, ny):
+        """Stop 1 cm before any room wall — used by all strategies."""
+        return clamp_to_room(self.x, self.y, nx, ny)
 
     def sensors(self):
         return {
@@ -497,9 +561,9 @@ class SimVisualizer:
         ax.set_ylabel("y (cm)")
         ax.set_title("Truck Simulator — Live Path")
 
-        # Room boundary in red
-        ax.add_patch(mpatches.Rectangle(
-            (0, 0), field_w, field_h,
+        # Room boundary in red (polygon)
+        ax.add_patch(mpatches.Polygon(
+            ROOM_POLYGON, closed=True,
             linewidth=2, edgecolor="red", facecolor="none",
         ))
 

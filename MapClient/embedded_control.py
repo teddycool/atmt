@@ -12,10 +12,8 @@ import math
 from dataclasses import dataclass
 
 # ── Simulator motion constants — must match truck_simulator.py ────────────────
-TRUCK_SPEED  = 2.0    # cm per tick at 100 % PWM
-TURN_ANGLE   = 15.0   # degrees per tick when steering
-FIELD_WIDTH  = 120.0  # cm
-FIELD_HEIGHT = 240.0  # cm
+TRUCK_SPEED = 2.0    # cm per tick at 100 % PWM
+TURN_ANGLE  = 15.0   # degrees per tick when steering
 
 
 @dataclass
@@ -75,7 +73,8 @@ class EmbeddedController:
 
         dist  = TRUCK_SPEED * (pwm / 100.0)
         angle = math.radians(truck.heading)
-        truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, truck.x + dist * math.cos(angle)))
-        truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, truck.y + dist * math.sin(angle)))
+        nx    = truck.x + dist * math.cos(angle)
+        ny    = truck.y + dist * math.sin(angle)
+        truck.x, truck.y = truck.clamp_position(nx, ny)
         truck.cmd_pwm   = pwm
         truck.cmd_steer = steer
