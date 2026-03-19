@@ -29,10 +29,32 @@ except ImportError:
     print("[WARN] matplotlib not installed. Run: pip install matplotlib")
     MATPLOTLIB_AVAILABLE = False
 
-# ── Field & simulation constants ──────────────────────────────────────────────
+# ── Room shape ────────────────────────────────────────────────────────────────
+# L-shaped room defined as an ordered polygon (vertices, cm).
+# The shape looks like this (y upward):
+#
+#   (0,240)──(60,240)
+#      │         │
+#      │  top    │
+#      │  wing   │
+#   (0,160)  (60,160)──(120,160)
+#      │                    │
+#      │    main body       │
+#      │                    │
+#   (0,  0)──────────(120,  0)
+#
+ROOM_POLYGON = [
+    (  0,   0),
+    (120,   0),
+    (120, 160),
+    ( 60, 160),
+    ( 60, 240),
+    (  0, 240),
+]
 
-FIELD_WIDTH  = 120.0   # cm
-FIELD_HEIGHT = 240.0   # cm
+# Bounding box — used only for sensor range guard and visualizer axes
+FIELD_WIDTH  = max(x for x, _ in ROOM_POLYGON)
+FIELD_HEIGHT = max(y for _, y in ROOM_POLYGON)
 
 TRUCK_SPEED       = 100    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
 TURN_ANGLE        = 15.0   # degrees per tick when turning
