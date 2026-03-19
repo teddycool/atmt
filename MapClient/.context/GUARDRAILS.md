@@ -10,6 +10,33 @@ Before starting any non-trivial task the agent MUST:
 4. Read `.context/PLAN.md` to know where to continue.
 5. Write a plan to `.context/PLAN.md` before doing any implementation work.
 
+## MQTT payload structure
+If you feel that you need to change the mqtt payload structure stop. It has to follow this rigid json structure
+{
+  "truck_id": string,
+  "seq": int,
+  "t_ms": int,
+  "mode": string,
+  "ul": float,
+  "ur": float,
+  "uf": float,
+  "ub": float,
+  "yaw_rate": float,
+  "heading": float,
+  "compass": float,
+  "mag_x": float,
+  "mag_y": float,
+  "mag_z": float,
+  "acc_x": float,
+  "acc_y": float,
+  "acc_z": float,
+  "width": float,
+  "center_error": float,
+  "front_blocked": bool,
+  "cmd_pwm": int,
+  "cmd_steer": srting
+}
+
 ## Safety Rules
 - Never delete files without explicit user confirmation.
 - Never push to remote git without explicit user instruction.
