@@ -1,13 +1,17 @@
 # Plan
 
 ## Active Task
-Replace map_visualization.py with a real-time sensor distance visualizer.
+Add SLAM to map_visualization.py.
 
 ## Steps Completed
-- [x] Removed all old code.
-- [x] New file: MQTT listener + 2×2 rolling time-series subplots (uf, ub, ul, ur).
-- [x] One line per truck per sensor; stop/slow threshold lines on every subplot.
-- [x] Updated context files.
+- [x] `bresenham()` ray iterator.
+- [x] `OccupancyGrid`: log-odds grid, Bresenham ray tracing, probability_map().
+- [x] `SLAMProcessor`: pose from payload (x/y/heading) or dead-reckoned; grid + trajectory.
+- [x] `MQTTListener`: first discovered truck routed to SLAM.
+- [x] Figure layout: GridSpec 2×3, left 2×2 sensor charts, right SLAM panel.
+- [x] SLAM panel: occupancy grid image + dashed trajectory + position dot + heading arrow.
+- [x] Auto-zoom SLAM view to visited area.
+- [x] Context files updated.
 
 ## In Progress
 - (none)

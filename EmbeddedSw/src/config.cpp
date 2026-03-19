@@ -15,11 +15,11 @@ void Config::Begin(void)
     Serial.println("Configuring truck settings");
     
     // Standard truck configuration
-    motorType = SINGLE;
-    steerType = MOTOR;
-    steer_servo_min = 60;
-    steer_servo_max = 105;
-    steer_servo_adjust = 5;
+    //motorType = SINGLE;
+    //steerType = MOTOR;
+    //steer_servo_min = 60;
+    //steer_servo_max = 105;
+    //steer_servo_adjust = 5;
     // JC Config overwrites default config
     Serial.println("Configures PÄR02");
     motorType = DIFFERENTIAL;

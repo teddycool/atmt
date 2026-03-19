@@ -1,5 +1,12 @@
 # Project History
 
+## 2026-03-19 — Added SLAM to map_visualization.py (ajuan)
+- Implemented `OccupancyGrid`: 400×400 cells at 2 cm/cell, log-odds updates, Bresenham ray tracing.
+- Implemented `SLAMProcessor`: pose from payload x/y/heading (simulator) or dead-reckoned; one truck at a time.
+- `MQTTListener` routes first discovered truck to SLAM.
+- Figure restructured to 3-column GridSpec: 2×2 sensor charts left, SLAM map right.
+- SLAM panel: live occupancy grid image (gray_r), dashed trajectory, position dot, heading arrow, auto-zoom.
+
 ## 2026-03-19 — Replaced map_visualization.py with sensor distance visualizer (ajuan)
 - Removed all previous path/boundary visualization code.
 - New implementation: 2×2 rolling time-series subplots, one per sensor (uf, ub, ul, ur).
