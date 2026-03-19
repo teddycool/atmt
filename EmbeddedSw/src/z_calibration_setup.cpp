@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <EEPROM.h>
-#include <Wire.h>
+#include <task_safe_wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_HMC5883_U.h>
 #include <variables/setget.h>

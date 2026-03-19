@@ -3,14 +3,14 @@
 
 #include <PubSubClient.h>
 #include <WiFiClient.h>
-#include <ArduinoJson.h>
+#include <functional>
 
 class Mqtt {
 public:
     Mqtt();
-    void init(String chipId);
-    void send(const String& topic, const String& message);
-    void subscribe(const String& topic);
+    void init(const char* chipId);
+    void send(const char* topic, const char* message);
+    void subscribe(const char* topic);
     void loop();
     bool connected();  // Add connected status check
     void setCallback(std::function<void(char *, byte *, unsigned int)> callback); // Add this
@@ -18,7 +18,7 @@ public:
 private:
     WiFiClient wifiClient;
     PubSubClient mqttClient;
-    String chipId;
+    char chipId[24] = {0};
     void connect();
 };
 

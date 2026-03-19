@@ -80,7 +80,14 @@ void Steer ::Begin()
 
   default:
   {
-    assert(false);
+    Serial.print("ERROR: Unknown steerType in Begin(): ");
+    Serial.println(steerType);
+    Serial.println("Defaulting to MOTOR configuration");
+    steerType = MOTOR;
+    // Fall back to MOTOR configuration
+    pinMode(MOTOR_left_pin, OUTPUT);
+    pinMode(MOTOR_right_pin, OUTPUT);
+    pinMode(MOTOR_enable_pin, OUTPUT);
     break;
   }
   }
@@ -156,7 +163,9 @@ void Steer::direction(int direction)
 
   default:
   {
-    assert(false);
+    Serial.print("ERROR: Unknown steerType in direction(): ");
+    Serial.println(steerType);
+    Serial.println("Ignoring steering command");
     break;
   }
   }

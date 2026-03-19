@@ -1,4 +1,4 @@
-#include <Wire.h>
+#include <task_safe_wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_HMC5883_U.h>
 #include <variables/setget.h>
@@ -305,7 +305,12 @@ static void compass_task(void *pvParameters)
   for (;;)
   {
     sensors_event_t event;
+    if (!task_safe_wire_try_lock(5)) {
+      vTaskDelay(pdMS_TO_TICKS(5));
+      continue;
+    }
     mag.getEvent(&event);
+    task_safe_wire_unlock();
 
     float magx = event.magnetic.x;
     float magy = event.magnetic.y;
@@ -384,9 +389,13 @@ void Compass::Begin()
   globalVar_set(rawMagX, 0);
   globalVar_set(rawMagY, 0);
   globalVar_set(rawMagZ, 0);
-  Wire.begin();
+  // Wire initialization is handled by task_safe_wire
   
-  if (!mag.begin())
+  task_safe_wire_lock();
+  bool magOk = mag.begin();
+  task_safe_wire_unlock();
+
+  if (!magOk)
   {
     Serial.println("❌ Failed to initialize HMC5883 sensor! Check wiring/I2C address. Compass disabled.");
     return;  // Don't hang – let setup() continue without compass
@@ -394,7 +403,9 @@ void Compass::Begin()
 
   // Display sensor details for debugging
   sensor_t sensor;
+  task_safe_wire_lock();
   mag.getSensor(&sensor);
+  task_safe_wire_unlock();
   Serial.printf("✅ Magnetometer initialized: %s\n", sensor.name);
   Serial.printf("   Range: %.1f to %.1f uT\n", sensor.min_value, sensor.max_value);
   Serial.printf("   Resolution: %.3f uT\n", sensor.resolution);
@@ -415,7 +426,9 @@ void Compass::Begin()
 void displaySensorDetails(void)
 {
   sensor_t sensor;
+  task_safe_wire_lock();
   mag.getSensor(&sensor);
+  task_safe_wire_unlock();
   Serial.println("------------------------------------");
   Serial.print("Sensor:       ");
   Serial.println(sensor.name);

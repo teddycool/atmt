@@ -7,7 +7,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
+#include <stdarg.h>
+#include <math.h>
 #include "esp_system.h"
+#include "esp_task_wdt.h"
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_bt.h"
@@ -29,12 +32,17 @@ Motor motor;
 Steer steer;
 Mqtt mqtt;
 
-String chipId;
+char chipId[17];  // Fixed size char array for chip ID (16 hex chars + null terminator)
 long int age;
 
 // -----------------------------
 // Configuration
 // -----------------------------
+enum class RunMode {
+  REAL,     // Minimal serial output for production
+  DEBUG     // Full serial output for development
+};
+
 struct ControlConfig {
   // Distances in cm
   float frontStopDist = 12.0f;
@@ -46,19 +54,22 @@ struct ControlConfig {
   uint8_t steerHoldSamples = 3;    // hysteresis before changing steering
 
   // PWM
-  int pwmExplore = 90;
-  int pwmSlow    = 80;
-  int pwmReverse = -80;
+  int pwmExplore = 100;
+  int pwmSlow    = 100;
+  int pwmReverse = -100;
 
   // Timing
-  uint32_t telemetryPeriodMs = 1000;  // 1 Hz (memory-safe for long runtime)
-  uint32_t recoverReverseMs  = 500;
-  uint32_t recoverTurnMs     = 600;
-  uint32_t stuckFrontMs      = 700;
+  uint32_t telemetryPeriodMs = 1000;  // 1 Hz to reduce heap pressure
+  uint32_t recoverReverseMs  = 1000;
+  uint32_t recoverTurnMs     = 1000;
+  uint32_t stuckFrontMs      = 500;
 
   // Filtering
   float usAlpha = 0.35f;          // exponential smoothing factor
   float imuAlpha = 0.25f;
+  
+  // Run mode
+  RunMode runMode = RunMode::REAL;  // Set to REAL for production
 };
 
 ControlConfig cfg;
@@ -162,6 +173,21 @@ uint8_t g_sameSteerCount = 0;
 // -----------------------------
 // Helpers
 // -----------------------------
+static void debugPrint(const String& message) {
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.println(message);
+  }
+}
+
+static void debugPrintf(const char* format, ...) {
+  if (cfg.runMode == RunMode::DEBUG) {
+    va_list args;
+    va_start(args, format);
+    Serial.printf(format, args);
+    va_end(args);
+  }
+}
+
 static float ema(float prev, float current, float alpha) {
   if (isnan(prev)) return current;
   if (isnan(current)) return prev;
@@ -279,25 +305,46 @@ bool mqttConnected() {
 }
 
 void mqttLoop() {
-  mqtt.loop();
+  // MQTT with enhanced thread safety
+  if (ESP.getFreeHeap() < 6000) {
+    return; // Skip MQTT when low memory
+  }
   
-  // TODO: Add command processing if mqtt class supports it
-  // Example: check for calibration commands, mode changes, etc.
+  try {
+    mqtt.loop();
+  } catch (...) {
+    // Ignore MQTT errors to prevent crashes
+  }
+  yield();
 }
 
 void publishTelemetry(const TelemetryFrame& t) {
-  // Publish telemetry as JSON on MQTT
+  // MQTT publishing with enhanced safety
   if (!mqttConnected()) {
-    Serial.println("MQTT not connected, skipping telemetry");
-    return;
+    return;  // Silent fail
   }
   
-  // Use char buffer instead of String concatenation to prevent heap fragmentation
-  char jsonStr[512];  // Fixed size buffer
-  snprintf(jsonStr, sizeof(jsonStr), 
+  // Check memory before proceeding
+  if (ESP.getFreeHeap() < 8000) {
+    return;  // Silent fail on low memory
+  }
+  
+  yield();
+  
+  // Check chipId is valid before using it
+  if (strlen(chipId) == 0) {
+    uint64_t chipIdHex = ESP.getEfuseMac();
+    snprintf(chipId, sizeof(chipId), "%x", (uint32_t)chipIdHex);
+  }
+  
+  // Use static buffer to prevent any heap allocation
+  static char jsonStr[512];  // Increased to fit full telemetry payload
+  memset(jsonStr, 0, sizeof(jsonStr));  // Clear buffer completely
+  
+  int written = snprintf(jsonStr, sizeof(jsonStr),
     "{"
     "\"truck_id\":\"%s\","
-    "\"seq\":%d,"
+    "\"seq\":%u,"
     "\"t_ms\":%lu,"
     "\"mode\":\"%s\","
     "\"ul\":%.1f,"
@@ -307,58 +354,38 @@ void publishTelemetry(const TelemetryFrame& t) {
     "\"yaw_rate\":%.2f,"
     "\"heading\":%.1f,"
     "\"compass\":%.1f,"
-    "\"mag_x\":%.1f,"
-    "\"mag_y\":%.1f,"
-    "\"mag_z\":%.1f,"
-    "\"acc_x\":%.1f,"
-    "\"acc_y\":%.1f,"
-    "\"acc_z\":%.1f,"
+    "\"mag_x\":%.2f,"
+    "\"mag_y\":%.2f,"
+    "\"mag_z\":%.2f,"
+    "\"acc_x\":%.2f,"
+    "\"acc_y\":%.2f,"
+    "\"acc_z\":%.2f,"
     "\"width\":%.1f,"
     "\"center_error\":%.1f,"
     "\"front_blocked\":%s,"
     "\"cmd_pwm\":%d,"
     "\"cmd_steer\":\"%s\""
     "}",
-    chipId.c_str(), t.seq, t.tMs, modeToString(t.mode),
-    t.filt.ul, t.filt.ur, t.filt.uf, t.filt.ub, t.filt.yawRate,
-    t.filt.heading, t.filt.compass, t.filt.magX, t.filt.magY, t.filt.magZ,
-    t.filt.accX, t.filt.accY, t.filt.accZ, t.feat.width, t.feat.centerError,
-    t.feat.frontBlocked ? "true" : "false", t.cmd.motorPwm, steerToString(t.cmd.steer)
+    chipId, (unsigned)t.seq, (unsigned long)t.tMs, modeToString(t.mode),
+    t.filt.ul, t.filt.ur, t.filt.uf, t.filt.ub,
+    t.filt.yawRate, t.filt.heading, t.filt.compass,
+    t.filt.magX, t.filt.magY, t.filt.magZ,
+    t.filt.accX, t.filt.accY, t.filt.accZ,
+    t.feat.width, t.feat.centerError,
+    t.feat.frontBlocked ? "true" : "false",
+    t.cmd.motorPwm, steerToString(t.cmd.steer)
   );
   
-  // Publish to truck-specific topic (chipId is auto-prepended by mqtt.send)
-  mqtt.send("telemetry", String(jsonStr));
-  
-  // Print memory usage periodically
-  static uint32_t lastMemCheck = 0;
-  if ((millis() - lastMemCheck) > 5000) {
-    lastMemCheck = millis();
-    Serial.printf("[MEMORY] Free heap: %d bytes\n", ESP.getFreeHeap());
+  // Safety check - ensure we didn't overflow buffer
+  if (written >= sizeof(jsonStr)) {
+    return; // Skip this telemetry if too large
   }
-}
-
-// -----------------------------
-// Sensor pipeline
-// -----------------------------
-void readSensors(RawSensors& raw) {
-  raw.ul = readUltrasonicLeftCm();
-  raw.ur = readUltrasonicRightCm();
-  raw.uf = readUltrasonicFrontCm();
-  raw.ub = readUltrasonicBackCm();
-  raw.yawRate = readYawRateDegPerSec();
-  raw.heading = readHeadingDeg();
   
-  // Read compass values
-  raw.magX = readMagneticX();
-  raw.magY = readMagneticY();
-  raw.magZ = readMagneticZ();
-  // Use heading for compass field (they're the same now)
-  raw.compass = raw.heading;
-  
-  // Read accelerometer values
-  raw.accX = readAccelerationX();
-  raw.accY = readAccelerationY();
-  raw.accZ = readAccelerationZ();
+  // Publish with basic error checking
+  if (mqttConnected() && ESP.getFreeHeap() > 6000) {
+    mqtt.send("telemetry", jsonStr);
+  }
+  yield();
 }
 
 void filterSensors(const RawSensors& raw, FilteredSensors& filt) {
@@ -572,6 +599,11 @@ void setup() {
 
   Serial.begin(115200);
   delay(200);  // let UART settle before first print
+  yield(); // Early yield
+
+  // Configure watchdog timer more safely
+  esp_task_wdt_init(30, false);  // 30 second timeout, don't panic
+  esp_task_wdt_add(NULL);  // Add current task to watchdog
 
   // Print the reset reason from the PREVIOUS run - useful for diagnosis
   esp_reset_reason_t rstReason = esp_reset_reason();
@@ -587,155 +619,185 @@ void setup() {
     case ESP_RST_BROWNOUT:  rstStr = "BROWNOUT"; break;
     default: break;
   }
-  Serial.println("Last reset reason: " + String(rstStr) + " (" + String((int)rstReason) + ")");
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.print("Last reset reason: ");
+    Serial.print(rstStr);
+    Serial.print(" (");
+    Serial.print((int)rstReason);
+    Serial.println(")");
+  }
 
-  Serial.println("🏁 Starting Racing Control Loop...");
-  Serial.println("💡 For compass calibration, use the calibration program first!");
-  Serial.println("   - Upload 'calibration' environment for setup");  
-  Serial.println("   - Upload 'control_loop' environment for racing");
+  debugPrint("🏁 Starting Racing Control Loop...");
+  debugPrint("💡 For compass calibration, use the calibration program first!");
+  debugPrint("   - Upload 'calibration' environment for setup");
+  debugPrint("   - Upload 'control_loop' environment for racing");
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.print("Run Mode: ");
+    Serial.println(cfg.runMode == RunMode::DEBUG ? "DEBUG" : "REAL");
+  }
 
-  // Get chip ID for MQTT
+  // Get chip ID for MQTT - use only lower 32 bits to avoid leading zeros
   uint64_t chipIdHex = ESP.getEfuseMac();
-  chipId = String((uint32_t)(chipIdHex >> 32), HEX) + String((uint32_t)chipIdHex, HEX);
-  Serial.println("Chip ID: " + chipId);
+  snprintf(chipId, sizeof(chipId), "%x", (uint32_t)chipIdHex);
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.print("Chip ID: ");
+    Serial.println(chipId);
+  }
+  yield(); // Yield after chip ID generation
 
   // Initialize global variables (semaphores) before any FreeRTOS calls
   globalVar_init();
+  yield(); // Yield after global var init
 
   // WiFi must be put in STA mode BEFORE setHostname() - in espressif32@3.5.0
   // tcpip_adapter_set_hostname() is called immediately and crashes if the
   // adapter isn't initialized yet (SW_CPU_RESET / NULL dereference).
   WiFi.mode(WIFI_STA);
+  yield(); // Yield after mode set
   WiFi.disconnect(true);  // clear any stale credentials/state from NVS
   delay(100);
+  yield(); // Yield after disconnect
 
   // Now safe to set hostname
-  WiFi.setHostname(chipId.c_str());
-  Serial.println("WiFi hostname set to: " + chipId);
+  WiFi.setHostname(chipId);
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.print("WiFi hostname set to: ");
+    Serial.println(chipId);
+  }
+  yield(); // Yield after hostname set
 
   // Connect to Wi-Fi
-  Serial.println("Connecting to WiFi...");
+  debugPrint("Connecting to WiFi...");
   Serial.flush();  // ensure output is flushed before WiFi radio starts
+  yield(); // Yield before WiFi begin
+  
   WiFi.begin(ssid, password);
+  yield(); // Yield after WiFi begin
   
   int wifiTimeout = 0;
   const int maxWifiTimeout = 30; // 30 second timeout
   
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.print(".");
+    delay(500); // Shorter delay
+    yield(); // Yield during WiFi connection attempts
+    delay(500); // Split delay with yield
+    if (cfg.runMode == RunMode::DEBUG) Serial.print(".");
+    yield(); // Additional yield
     wifiTimeout++;
     
     if (wifiTimeout > maxWifiTimeout) {
-      Serial.println("\nWiFi connection timeout! Restarting...");
+      debugPrint("\nWiFi connection timeout! Restarting...");
+      yield();
       ESP.restart();
     }
   }
-  Serial.println("\nWiFi connected!");
+  debugPrint("\nWiFi connected!");
 
   // Setup Arduino OTA
-  Serial.println("Starting Arduino OTA...");
-  ArduinoOTA.setHostname(("truck-" + chipId).c_str());
+  debugPrint("Starting Arduino OTA...");
+  char otaHostname[32];
+  snprintf(otaHostname, sizeof(otaHostname), "truck-%s", chipId);
+  ArduinoOTA.setHostname(otaHostname);
   ArduinoOTA.setPassword("truck123"); // Set OTA password
   
   ArduinoOTA.onStart([]() {
-    String type = (ArduinoOTA.getCommand() == U_FLASH) ? "sketch" : "filesystem";
-    Serial.println("Start updating " + type);
+    if (cfg.runMode == RunMode::DEBUG) {
+      Serial.print("Start updating ");
+      Serial.println((ArduinoOTA.getCommand() == U_FLASH) ? "sketch" : "filesystem");
+    }
   });
   
   ArduinoOTA.onEnd([]() {
-    Serial.println("\nOTA Update Complete!");
+    debugPrint("\nOTA Update Complete!");
   });
   
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    if (cfg.runMode == RunMode::DEBUG) Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
   });
   
   ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    if (cfg.runMode == RunMode::DEBUG) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    }
   });
   
   ArduinoOTA.begin();
-  Serial.println("Arduino OTA ready! Use hostname: truck-" + chipId);
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.print("Arduino OTA ready! Use hostname: ");
+    Serial.println(otaHostname);
+  }
 
   // Initialize sensors AFTER WiFi (with error checking and delays)
-  Serial.println("Initializing sensors...");
-  Serial.printf("[MEMORY] Before sensor init: %d bytes\n", ESP.getFreeHeap());
+  debugPrint("Initializing sensors...");
+  if (cfg.runMode == RunMode::DEBUG) Serial.printf("[MEMORY] Before sensor init: %d bytes\n", ESP.getFreeHeap());
   
   // Add delay before sensor init
   delay(1000);
   
-  // Initialize accelerometer with error checking
-  Serial.println("Initializing MPU6050...");
-  try {
-    accelSensor.Begin();
-    Serial.println("MPU6050 initialization completed");
-  } catch (...) {
-    Serial.println("MPU6050 initialization failed, continuing...");
-  }
-  
-  delay(500); // Delay between sensor initializations
-  
-  // Initialize compass with improved error handling
-  Serial.println("Initializing compass...");
-  Serial.printf("[MEMORY] Before compass init: %d bytes\n", ESP.getFreeHeap());
-  
-  try {
-    compass.Begin();
-    Serial.println("Compass initialization completed");
-  } catch (...) {
-    Serial.println("Compass initialization failed, continuing without compass...");
-  }
+  // Initialize accelerometer with error checking - no exceptions
+  debugPrint("Initializing MPU6050...");
+  yield();
+  accelSensor.Begin();
+  debugPrint("MPU6050 initialization completed");
+  yield();
   
   delay(500);
-  Serial.printf("[MEMORY] After compass init: %d bytes\n", ESP.getFreeHeap());
-  Serial.printf("[MEMORY] After accel init: %d bytes\n", ESP.getFreeHeap());
+  yield();
+  
+  // Initialize compass - no exceptions
+  debugPrint("Initializing compass...");
+  if (cfg.runMode == RunMode::DEBUG) Serial.printf("[MEMORY] Before compass init: %d bytes\n", ESP.getFreeHeap());
+  
+  compass.Begin();
+  debugPrint("Compass initialization completed");
+  yield();
+  
+  delay(500);
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.printf("[MEMORY] After sensor init: %d bytes\n", ESP.getFreeHeap());
+  }
   
   // Initialize ultrasonic sensors with delays and error handling
-  Serial.println("Initializing ultrasonic sensors...");
+  debugPrint("Initializing ultrasonic sensors...");
   delay(100);
   
-  try {
-    ultraSound.open(TRIGGER_PIN1, ECHO_PIN1, rawDistFront);
-    delay(100);
-    ultraSound.open(TRIGGER_PIN2, ECHO_PIN2, rawDistRight);
-    delay(100);
-    ultraSound.open(TRIGGER_PIN3, ECHO_PIN3, rawDistLeft);
-    delay(100);
-    ultraSound.open(TRIGGER_PIN4, ECHO_PIN4, rawDistBack);
-    delay(100);
-    Serial.println("++++");
-  } catch (...) {
-    Serial.println("Ultrasonic sensor initialization error, continuing...");
-  }
+  // Initialize ultrasonic sensors without exceptions
+  ultraSound.open(TRIGGER_PIN1, ECHO_PIN1, rawDistFront);
+  delay(100);
+  ultraSound.open(TRIGGER_PIN2, ECHO_PIN2, rawDistRight);
+  delay(100);
+  ultraSound.open(TRIGGER_PIN3, ECHO_PIN3, rawDistLeft);
+  delay(100);
+  ultraSound.open(TRIGGER_PIN4, ECHO_PIN4, rawDistBack);
+  delay(100);
   
-  Serial.printf("[MEMORY] After ultrasonic init: %d bytes\n", ESP.getFreeHeap());
-
-  // Initialize actuators with error handling
-  Serial.println("Initializing actuators...");
-  try {
-    steer.Begin();
-    delay(100);
-    Serial.println("Actuators initialized successfully");
-  } catch (...) {
-    Serial.println("Actuator initialization error, continuing...");
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.printf("[MEMORY] After ultrasonic init: %d bytes\n", ESP.getFreeHeap());
   }
-  Serial.printf("[MEMORY] After actuator init: %d bytes\n", ESP.getFreeHeap());
+
+  // Initialize actuators - no exceptions
+  debugPrint("Initializing actuators...");
+  steer.Begin();
+  delay(100);
+  debugPrint("Actuators initialized successfully");
+  
+  if (cfg.runMode == RunMode::DEBUG) {
+    Serial.printf("[MEMORY] After actuator init: %d bytes\n", ESP.getFreeHeap());
+  }
   
   // motor object is ready to use
 
   // Initialize MQTT with timeout
-  Serial.println("Initializing MQTT...");
+  debugPrint("Initializing MQTT...");
   mqtt.init(chipId);
   
   // Test MQTT connection with timeout
-  Serial.println("Testing MQTT connection...");
-  
+  debugPrint("Testing MQTT connection...");
   int mqttRetries = 0;
   const int maxMqttRetries = 3;
   bool mqttSuccess = false;
@@ -744,91 +806,155 @@ void setup() {
     try {
       mqtt.send("status", "Control loop starting up");
       if (mqttConnected()) {
-        Serial.println("MQTT connected successfully!");
+        debugPrint("MQTT connected successfully!");
         mqtt.subscribe("control"); // Subscribe to control commands
         mqttSuccess = true;
       } else {
         mqttRetries++;
-        Serial.printf("MQTT attempt %d failed, retrying...\n", mqttRetries);
+        debugPrintf("MQTT attempt %d failed, retrying...\n", mqttRetries);
         delay(1000);
       }
     } catch (...) {
       mqttRetries++;
-      Serial.printf("MQTT exception on attempt %d, retrying...\n", mqttRetries);
+      debugPrintf("MQTT exception on attempt %d, retrying...\n", mqttRetries);
       delay(1000);
     }
   }
   
   if (!mqttSuccess) {
-    Serial.println("WARNING: MQTT connection failed after retries, continuing anyway");
+    debugPrint("WARNING: MQTT connection failed after retries, continuing anyway");
   }
+  
 
-  Serial.println("Setup complete!");
+  debugPrint("Setup complete!");
   g_mode = Mode::IDLE;
   g_cmd = {};
   
-  Serial.printf("[MEMORY] Initial free heap: %d bytes\n", ESP.getFreeHeap());
-  Serial.println("System ready - entering main loop");
+  debugPrintf("[MEMORY] Initial free heap: %d bytes\n", ESP.getFreeHeap());
+  debugPrint("System ready - entering main loop");
 }
 
 void loop() {
+  // STEP 2: GRADUAL SENSOR RESTORATION + MQTT
+  static uint32_t counter = 0;
   const uint32_t nowMs = millis();
-
-  // Handle OTA updates
-  ArduinoOTA.handle();
-
-  mqttLoop();
   
-  // Periodic MQTT status check (every 10 seconds)
-  if ((nowMs - g_lastMqttStatusMs) > 10000) {
-    g_lastMqttStatusMs = nowMs;
-    if (!mqttConnected()) {
-      Serial.println("[WARNING] MQTT disconnected, attempting reconnect...");
-    } else {
-      Serial.println("[INFO] MQTT connected OK");
+  // Check heap every 1000 iterations
+  if (++counter % 1000 == 0) {
+    size_t freeHeap = ESP.getFreeHeap();
+    Serial.printf("[%u] Heap: %d bytes, millis: %u\n", counter, freeHeap, nowMs);
+    
+    // Emergency restart if heap is critically low
+    if (freeHeap < 3000) {
+      Serial.println("[EMERGENCY] Heap critically low, restarting...");
+      delay(100);
+      ESP.restart();
     }
   }
+  
+  // Basic OTA handling
+  static uint32_t lastOTA = 0;
+  if ((nowMs - lastOTA) > 100) {
+    lastOTA = nowMs;
+    ArduinoOTA.handle();
+  }
+  yield();
+  
+  // MQTT loop with enhanced safety
+  static uint32_t lastMqttLoop = 0;
+  if ((nowMs - lastMqttLoop) > 100) {  // 10Hz MQTT loop
+    lastMqttLoop = nowMs;
+    if (ESP.getFreeHeap() > 6000) {  // Only if enough memory
+      mqttLoop();
+    }
+  }
+  yield();
+  
+  // Full sensor read + explore mode control
+  static uint32_t lastSensorRead = 0;
+  if ((nowMs - lastSensorRead) > 50) {  // 20Hz sensors
+    lastSensorRead = nowMs;
 
-  // 1. Read + filter + derive with safety checks
-  readSensors(g_raw);
-  filterSensors(g_raw, g_filt);
-  deriveFeatures(g_filt, g_feat);
+    if (ESP.getFreeHeap() > 9000) {
+      try {
+        g_raw.ul = readUltrasonicLeftCm();
+        g_raw.ur = readUltrasonicRightCm();
+        g_raw.uf = readUltrasonicFrontCm();
+        g_raw.ub = readUltrasonicBackCm();
+        g_raw.yawRate = readYawRateDegPerSec();
+        g_raw.heading = readHeadingDeg();
+        g_raw.magX = readMagneticX();
+        g_raw.magY = readMagneticY();
+        g_raw.magZ = readMagneticZ();
+        g_raw.compass = g_raw.heading;
+        g_raw.accX = readAccelerationX();
+        g_raw.accY = readAccelerationY();
+        g_raw.accZ = readAccelerationZ();
 
-  // 2. Example: start exploring automatically after boot
+        filterSensors(g_raw, g_filt);
+        deriveFeatures(g_filt, g_feat);
+
+        if (counter % 3000 == 0) {
+          Serial.printf("[SENSORS] UL:%.1f UR:%.1f UF:%.1f UB:%.1f\n", g_raw.ul, g_raw.ur, g_raw.uf, g_raw.ub);
+        }
+      } catch (...) {
+        Serial.println("[ERROR] Sensor read failed");
+      }
+    }
+    yield();
+  }
+
+  // Auto explore mode
   if (g_mode == Mode::IDLE && nowMs > 2000) {
     g_mode = Mode::EXPLORE;
   }
 
-  // 3. Update state machine
   updateStateMachine(g_feat, g_filt, nowMs);
 
-  // 4. Compute command by mode
   switch (g_mode) {
     case Mode::IDLE:
       g_cmd.motorPwm = 0;
       g_cmd.steer = SteerCmd::STRAIGHT;
       break;
-
     case Mode::EXPLORE:
       g_cmd = computeExploreCommand(g_feat, g_filt);
       break;
-
     case Mode::RECOVER:
       g_cmd = computeRecoverCommand(g_feat, g_filt, nowMs);
       break;
-
     case Mode::STOP:
       g_cmd.motorPwm = 0;
       g_cmd.steer = SteerCmd::STRAIGHT;
       break;
   }
 
-  // 5. Apply outputs
-  applyCommand(g_cmd);
-
-  // 6. Publish telemetry
-  maybePublishTelemetry(nowMs);
-
-  // Small loop delay if needed
-  delay(20);  // ~50 Hz control loop
+  if (ESP.getFreeHeap() > 4000) {
+    applyCommand(g_cmd);
+  } else {
+    motor.driving(0);
+    steer.Straight();
+  }
+  
+  // Publish telemetry at low rate
+  static uint32_t lastTelemetry = 0;
+  if ((nowMs - lastTelemetry) > 500) {  // 2Hz telemetry
+    lastTelemetry = nowMs;
+    if (ESP.getFreeHeap() > 8000) {
+      // Use minimal telemetry frame
+      TelemetryFrame telemetry;
+      telemetry.seq = ++g_seq;
+      telemetry.tMs = nowMs;
+      telemetry.mode = g_mode;
+      telemetry.raw = g_raw;
+      telemetry.filt = g_filt;
+      telemetry.feat = g_feat;
+      telemetry.cmd = g_cmd;
+      publishTelemetry(telemetry);
+    }
+  }
+  yield();
+  
+  // Moderate loop speed for stability
+  delay(80);  // ~12Hz loop for stability
+  yield();
 }
