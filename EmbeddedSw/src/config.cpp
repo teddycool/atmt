@@ -20,6 +20,13 @@ void Config::Begin(void)
     steer_servo_min = 60;
     steer_servo_max = 105;
     steer_servo_adjust = 5;
+    // JC Config overwrites default config
+    Serial.println("Configures PÄR02");
+    motorType = DIFFERENTIAL;
+    steerType = SERVO;
+    steer_servo_min = 60;
+    steer_servo_max = 105;
+    steer_servo_adjust = 5;
     
     Serial.println("Configuration completed");
 };

@@ -118,3 +118,5 @@ package-lock.json
 *.rej
 .*.orig
 .*.rej
+
+EmbeddedSw/compile_commands.json
