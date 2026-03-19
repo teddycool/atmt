@@ -249,10 +249,13 @@ class EmbeddedExplore(ExploreStrategy):
 
 # ── Truck state ───────────────────────────────────────────────────────────────
 
+START_MARGIN = 20.0   # cm from border — truck won't start closer than this
+
+
 class Truck:
     def __init__(self, strategy=None):
-        self.x = FIELD_WIDTH  / 2
-        self.y = FIELD_HEIGHT / 2
+        self.x = random.uniform(START_MARGIN, FIELD_WIDTH  - START_MARGIN)
+        self.y = random.uniform(START_MARGIN, FIELD_HEIGHT - START_MARGIN)
         self.heading = random.uniform(0, 360)   # degrees, 0=East
         self.seq = 0
         self.t_ms = 0
@@ -358,6 +361,8 @@ def run(broker, port, dry_run, strategy_name):
           f"strategy={strategy_name}")
     print(f"[SIM] Publishing every {interval*1000:.0f} ms  (Ctrl-C to stop)\n")
 
+    last_pos_print = time.monotonic()
+
     try:
         while True:
             tick_start = time.monotonic()
@@ -368,6 +373,10 @@ def run(broker, port, dry_run, strategy_name):
                 publisher.publish(MQTT_TOPIC, payload)
             else:
                 print(json.dumps(payload))
+
+            if tick_start - last_pos_print >= 1.0:
+                print(f"[POS] t={truck.t_ms/1000:.1f}s  x={truck.x:.1f} cm  y={truck.y:.1f} cm  heading={truck.heading:.1f}°")
+                last_pos_print = tick_start
 
             elapsed = time.monotonic() - tick_start
             time.sleep(max(0.0, interval - elapsed))
