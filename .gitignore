@@ -108,7 +108,6 @@ secrets.h
 *.key
 *.pem
 *.p12
-config.h
 *secret*
 *password*
 *credential*
