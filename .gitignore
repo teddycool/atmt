@@ -120,3 +120,5 @@ package-lock.json
 .*.rej
 
 EmbeddedSw/compile_commands.json
+
+MapClient/venv/
