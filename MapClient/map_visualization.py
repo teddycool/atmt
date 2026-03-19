@@ -1,20 +1,19 @@
 """
-Truck Map Visualizer
-Subscribes to all truck telemetry topics and visualizes their paths in real time.
-Discovers trucks dynamically via the wildcard topic +/telemetry.
+Truck Sensor Visualizer
+Subscribes to all truck telemetry topics and shows real-time rolling charts
+for the four ultrasonic distance sensors: UF (front), UB (back), UL (left), UR (right).
+One line per truck, one subplot per sensor.
 """
 
 import json
-import math
 import argparse
 import threading
-import numpy as np
+from collections import deque
+
 import matplotlib
 matplotlib.use("TkAgg")          # interactive backend — requires python3-tk
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import matplotlib.patches as patches
-from collections import defaultdict
 
 try:
     import paho.mqtt.client as mqtt
@@ -23,104 +22,46 @@ except ImportError:
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-MQTT_BROKER      = "192.168.2.2"
-MQTT_PORT        = 1883
-TOPIC_WILDCARD   = "+/telemetry"
+MQTT_BROKER    = "192.168.2.2"
+MQTT_PORT      = 1883
+TOPIC_WILDCARD = "+/telemetry"
 
-SENSOR_MAX_RANGE = 150.0   # cm — ignore sensor projections beyond this
-WALL_HIT_THRESH  = 140.0   # cm — only record as wall point if closer than this
-BOUNDS_PERCENTILE = 3      # % to trim on each side when fitting boundary
+SENSOR_MAX     = 250.0   # cm — y-axis ceiling
+WINDOW         = 60      # number of readings to keep per sensor per truck
 
-# One colour per truck (cycles if more trucks than colours)
-TRUCK_COLORS = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:purple"]
+# Threshold reference lines drawn on every subplot
+STOP_DIST      = 12.0    # cm — red line (embedded front-stop threshold)
+SLOW_DIST      = 20.0    # cm — orange line (embedded slow-down threshold)
+
+SENSORS        = ["uf", "ub", "ul", "ur"]
+SENSOR_LABELS  = {"uf": "Front (UF)", "ub": "Back (UB)",
+                  "ul": "Left (UL)",  "ur": "Right (UR)"}
+
+TRUCK_COLORS   = ["tab:blue", "tab:orange", "tab:green", "tab:purple", "tab:red"]
 
 # ── Per-truck state ───────────────────────────────────────────────────────────
 
 class TruckState:
     def __init__(self, truck_id, color):
-        self.truck_id  = truck_id
-        self.color     = color
-        self.x         = None
-        self.y         = None
-        self.heading   = 0.0
-        self.prev_t_ms = None
-        self.path_x    = []
-        self.path_y    = []
-        self.wall_x    = []
-        self.wall_y    = []
-        # Incremental axis bounds — updated per message, avoids O(n) scan each frame
-        self.x_min = self.x_max = None
-        self.y_min = self.y_max = None
-        self.lock   = threading.Lock()
-
-    def _expand_bounds(self, x, y):
-        """Extend tracked axis bounds to include (x, y). Call inside lock."""
-        if self.x_min is None:
-            self.x_min = self.x_max = x
-            self.y_min = self.y_max = y
-        else:
-            if x < self.x_min: self.x_min = x
-            if x > self.x_max: self.x_max = x
-            if y < self.y_min: self.y_min = y
-            if y > self.y_max: self.y_max = y
+        self.truck_id = truck_id
+        self.color    = color
+        # One deque per sensor
+        self.history  = {s: deque(maxlen=WINDOW) for s in SENSORS}
+        self.lock     = threading.Lock()
 
     def update(self, msg: dict):
-        t_ms    = msg.get("t_ms", 0)
-        heading = msg.get("compass") or msg.get("heading") or 0.0
-        self.heading = heading
-
-        # Use ground-truth x/y if present (simulator), else dead-reckon from commands
-        if "x" in msg and "y" in msg:
-            self.x = msg["x"]
-            self.y = msg["y"]
-        else:
-            if self.x is None:
-                self.x, self.y = 0.0, 0.0
-            if self.prev_t_ms is not None:
-                dt_s      = (t_ms - self.prev_t_ms) / 1000.0
-                cmd_pwm   = msg.get("cmd_pwm", 0)
-                speed_cms = (cmd_pwm / 100.0) * 25.0
-                angle     = math.radians(self.heading)
-                self.x   += speed_cms * dt_s * math.cos(angle)
-                self.y   += speed_cms * dt_s * math.sin(angle)
-
-        self.prev_t_ms = t_ms
-
         with self.lock:
-            self.path_x.append(self.x)
-            self.path_y.append(self.y)
-            self._expand_bounds(self.x, self.y)
+            for s in SENSORS:
+                if s in msg:
+                    self.history[s].append(float(msg[s]))
 
-            # Project sensor rays → wall hit points
-            for offset_deg, key in [(0, "uf"), (180, "ub"), (270, "ul"), (90, "ur")]:
-                dist = msg.get(key, SENSOR_MAX_RANGE)
-                if dist < WALL_HIT_THRESH:
-                    angle = math.radians(self.heading + offset_deg)
-                    wx = self.x + dist * math.cos(angle)
-                    wy = self.y + dist * math.sin(angle)
-                    self.wall_x.append(wx)
-                    self.wall_y.append(wy)
-                    self._expand_bounds(wx, wy)
-
-
-def fit_boundary(wall_x, wall_y):
-    """Return (x, y, w, h) of estimated bounding rectangle, or None if too few points."""
-    if len(wall_x) < 8:
-        return None
-    x0 = np.percentile(wall_x, BOUNDS_PERCENTILE)
-    x1 = np.percentile(wall_x, 100 - BOUNDS_PERCENTILE)
-    y0 = np.percentile(wall_y, BOUNDS_PERCENTILE)
-    y1 = np.percentile(wall_y, 100 - BOUNDS_PERCENTILE)
-    return x0, y0, x1 - x0, y1 - y0
-
-
-# ── MQTT ──────────────────────────────────────────────────────────────────────
+# ── MQTT listener ─────────────────────────────────────────────────────────────
 
 class MQTTListener:
     def __init__(self, broker, port):
-        self.trucks: dict[str, TruckState] = {}
+        self.trucks     = {}          # truck_id → TruckState
         self._color_idx = 0
-        self._lock = threading.Lock()
+        self._lock      = threading.Lock()
 
         try:
             self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
@@ -165,123 +106,73 @@ class MQTTListener:
 
         self.trucks[truck_id].update(payload)
 
-
 # ── Visualization ─────────────────────────────────────────────────────────────
 
 def run_visualizer(listener: MQTTListener):
-    fig, ax = plt.subplots(figsize=(8, 8))
-    ax.set_title("Truck Map Visualizer")
-    ax.set_xlabel("x (cm)")
-    ax.set_ylabel("y (cm)")
-    ax.set_aspect("equal")
-    ax.grid(True, linestyle="--", alpha=0.4)
+    fig, axes = plt.subplots(2, 2, figsize=(10, 6))
+    fig.suptitle("Ultrasonic Sensor Distances", fontsize=13)
 
-    # Artists stored per truck_id
-    path_lines  = {}
-    wall_scatts = {}
-    heading_arrows = {}
-    bound_rects = {}
-    bound_texts = {}
+    # Map sensor key → subplot axis
+    ax_map = {
+        "uf": axes[0][0],
+        "ub": axes[0][1],
+        "ul": axes[1][0],
+        "ur": axes[1][1],
+    }
 
-    def init():
-        return []
+    # Draw static threshold lines and labels on every subplot
+    for sensor, ax in ax_map.items():
+        ax.set_title(SENSOR_LABELS[sensor])
+        ax.set_ylim(0, SENSOR_MAX)
+        ax.set_xlim(0, WINDOW)
+        ax.set_ylabel("Distance (cm)")
+        ax.set_xlabel("Readings")
+        ax.axhline(STOP_DIST, color="red",    linestyle="--", linewidth=1,
+                   label=f"Stop {STOP_DIST:.0f} cm")
+        ax.axhline(SLOW_DIST, color="orange", linestyle="--", linewidth=1,
+                   label=f"Slow {SLOW_DIST:.0f} cm")
+        ax.legend(fontsize=7, loc="upper right")
+        ax.grid(True, alpha=0.3)
+
+    # Lines stored as {truck_id: {sensor: Line2D}}
+    lines = {}
 
     def update(_frame):
-        artists = []
         trucks = dict(listener.trucks)  # snapshot
 
         for truck_id, state in trucks.items():
             with state.lock:
-                px = list(state.path_x)
-                py = list(state.path_y)
-                wx = list(state.wall_x)
-                wy = list(state.wall_y)
-                heading  = state.heading
-                color    = state.color
-                cur_x    = state.x
-                cur_y    = state.y
+                history = {s: list(state.history[s]) for s in SENSORS}
 
-            if cur_x is None:
-                continue
+            if truck_id not in lines:
+                lines[truck_id] = {}
 
-            # ── Path line
-            if truck_id not in path_lines:
-                (line,) = ax.plot([], [], "--", color=color, linewidth=1.2,
-                                  label=truck_id, alpha=0.7)
-                path_lines[truck_id] = line
-            path_lines[truck_id].set_data(px, py)
-            artists.append(path_lines[truck_id])
+            for sensor, ax in ax_map.items():
+                data = history[sensor]
+                if not data:
+                    continue
 
-            # ── Wall hit scatter
-            if truck_id not in wall_scatts:
-                wall_scatts[truck_id] = ax.scatter(
-                    [], [], s=4, color=color, alpha=0.3, marker=".")
-            if wx:
-                wall_scatts[truck_id].set_offsets(np.c_[wx, wy])
-            artists.append(wall_scatts[truck_id])
+                if sensor not in lines[truck_id]:
+                    (line,) = ax.plot([], [], color=state.color,
+                                      linewidth=1.5, label=truck_id)
+                    ax.legend(fontsize=7, loc="upper right")
+                    lines[truck_id][sensor] = line
 
-            # ── Heading arrow
-            arrow_len = 10.0
-            angle = math.radians(heading)
-            dx, dy = arrow_len * math.cos(angle), arrow_len * math.sin(angle)
-            if truck_id in heading_arrows:
-                heading_arrows[truck_id].remove()
-            heading_arrows[truck_id] = ax.annotate(
-                "", xy=(cur_x + dx, cur_y + dy), xytext=(cur_x, cur_y),
-                arrowprops=dict(arrowstyle="->", color=color, lw=2),
-            )
-            artists.append(heading_arrows[truck_id])
+                lines[truck_id][sensor].set_data(range(len(data)), data)
 
-            # ── Estimated boundary rectangle
-            bounds = fit_boundary(wx, wy)
-            if bounds:
-                bx, by, bw, bh = bounds
-                if truck_id in bound_rects:
-                    bound_rects[truck_id].remove()
-                rect = patches.Rectangle(
-                    (bx, by), bw, bh,
-                    linewidth=2, edgecolor="red", facecolor="none",
-                    linestyle="-", alpha=0.9,
-                )
-                ax.add_patch(rect)
-                bound_rects[truck_id] = rect
-                artists.append(rect)
-
-                label = f"{bw:.0f}×{bh:.0f} cm"
-                if truck_id in bound_texts:
-                    bound_texts[truck_id].remove()
-                bound_texts[truck_id] = ax.text(
-                    bx + bw / 2, by + bh + 4, label,
-                    ha="center", color=color, fontsize=8,
-                )
-                artists.append(bound_texts[truck_id])
-
-        # Auto-scale axes to data
-        all_x = [x for s in trucks.values() for x in s.path_x + s.wall_x]
-        all_y = [y for s in trucks.values() for y in s.path_y + s.wall_y]
-        if all_x and all_y:
-            margin = 15
-            ax.set_xlim(min(all_x) - margin, max(all_x) + margin)
-            ax.set_ylim(min(all_y) - margin, max(all_y) + margin)
-
-        if trucks:
-            ax.legend(loc="upper right", fontsize=8)
-
-        return artists
+        return [l for truck in lines.values() for l in truck.values()]
 
     ani = animation.FuncAnimation(
-        fig, update, init_func=init, interval=200, blit=False,
-        cache_frame_data=False,
+        fig, update, interval=200, blit=False, cache_frame_data=False,
     )
 
     plt.tight_layout()
     plt.show()
 
-
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Real-time truck map visualizer")
+    parser = argparse.ArgumentParser(description="Real-time ultrasonic sensor visualizer")
     parser.add_argument("--broker", default=MQTT_BROKER, help="MQTT broker host")
     parser.add_argument("--port",   default=MQTT_PORT, type=int, help="MQTT broker port")
     args = parser.parse_args()

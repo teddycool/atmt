@@ -1,5 +1,20 @@
 # Project History
 
+## 2026-03-19 — Replaced map_visualization.py with sensor distance visualizer (ajuan)
+- Removed all previous path/boundary visualization code.
+- New implementation: 2×2 rolling time-series subplots, one per sensor (uf, ub, ul, ur).
+- One coloured line per truck per subplot; trucks discovered dynamically via `+/telemetry`.
+- Red/orange threshold lines at 12 cm (stop) and 20 cm (slow) on every subplot.
+- Rolling window of 60 readings; updates every 200 ms.
+
+## 2026-03-19 — Visualization real-time path fix (ajuan)
+- Rewrote `run_visualizer()` and `TruckState` in `map_visualization.py`:
+  - Added incremental axis bounds tracking (`_expand_bounds`) — O(1) per message, O(trucks) per frame instead of O(points).
+  - Fixed wall scatter: initialised with `np.empty((0,2))` so `set_offsets` is safe from the first frame.
+  - Added filled dot for current truck position.
+  - Boundary rectangle label colour changed to red to match rect.
+  - Path line clearly dashed, all artists update correctly each frame.
+
 ## 2026-03-19 — Visualizer & simulator UX fixes (ajuan)
 - `map_visualization.py`: boundary rectangle now always rendered in red; path line changed to dashed.
 - `truck_simulator.py`: truck starts at random position ≥20 cm from any border (`START_MARGIN = 20.0`).

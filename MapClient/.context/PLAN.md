@@ -1,17 +1,16 @@
 # Plan
 
 ## Active Task
-Fix map_visualization.py real-time path rendering.
+Replace map_visualization.py with a real-time sensor distance visualizer.
 
 ## Steps Completed
-- (none yet)
+- [x] Removed all old code.
+- [x] New file: MQTT listener + 2×2 rolling time-series subplots (uf, ub, ul, ur).
+- [x] One line per truck per sensor; stop/slow threshold lines on every subplot.
+- [x] Updated context files.
 
 ## In Progress
-- Rewriting run_visualizer() and TruckState to fix all issues.
+- (none)
 
 ## Steps Remaining
-1. Track axis bounds incrementally in TruckState (min/max updated on each message).
-2. Fix scatter: initialise with empty numpy array so set_offsets always works.
-3. Add current-position dot artist per truck.
-4. Remove the O(n) all_x/all_y scan from the update loop.
-5. Update context files.
+- (none)

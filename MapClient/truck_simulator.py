@@ -22,7 +22,7 @@ except ImportError:
 FIELD_WIDTH  = 120.0   # cm
 FIELD_HEIGHT = 240.0   # cm
 
-TRUCK_SPEED       = 5.0    # cm per tick
+TRUCK_SPEED       = 0.5    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
 TURN_ANGLE        = 15.0   # degrees per tick when turning
 SENSOR_MAX_RANGE  = 150.0  # cm  (ultrasound max reading)
 SENSOR_NOISE_CM   = 0.5    # ±cm random noise on each sensor
