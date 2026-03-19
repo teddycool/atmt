@@ -45,8 +45,7 @@ enum class RunMode {
 
 struct ControlConfig {
   // Distances in cm
-  float frontStopDist = 12.0f;
-  float frontSlowDist = 20.0f;
+  float frontStopDist = 20.0f;
   float sideMinDist   = 6.0f;
 
   // Corridor-centering
@@ -54,13 +53,13 @@ struct ControlConfig {
   uint8_t steerHoldSamples = 3;    // hysteresis before changing steering
 
   // PWM
-  int pwmExplore = 100;
-  int pwmSlow    = 100;
-  int pwmReverse = -100;
+  int pwmExplore = 95;
+  int pwmSlow    = 95;
+  int pwmReverse = -95;
 
   // Timing
-  uint32_t telemetryPeriodMs = 1000;  // 1 Hz to reduce heap pressure
-  uint32_t recoverReverseMs  = 1000;
+  uint32_t telemetryPeriodMs = 500;  // 1 Hz to reduce heap pressure
+  uint32_t recoverReverseMs  = 1500;
   uint32_t recoverTurnMs     = 1000;
   uint32_t stuckFrontMs      = 500;
 
@@ -96,6 +95,9 @@ struct RawSensors {
   float uf = NAN;       // ultrasonic front
   float ub = NAN;       // ultrasonic back
   float yawRate = NAN;  // deg/s
+  float gyX = NAN;      // gyro X
+  float gyY = NAN;      // gyro Y
+  float gyZ = NAN;      // gyro Z
   float heading = NAN;  // deg
   // Compass values
   float magX = NAN;     // magnetic field X
@@ -114,6 +116,9 @@ struct FilteredSensors {
   float uf = NAN;
   float ub = NAN;
   float yawRate = NAN;
+  float gyX = NAN;
+  float gyY = NAN;
+  float gyZ = NAN;
   float heading = NAN;
   // Compass values
   float magX = NAN;
@@ -238,6 +243,18 @@ float readYawRateDegPerSec()   {
   long raw = globalVar_get(rawGyZ, &age);
   return raw / 131.0f;
 }
+float readGyroX() {
+  long raw = globalVar_get(rawGyX, &age);
+  return (float)raw;
+}
+float readGyroY() {
+  long raw = globalVar_get(rawGyY, &age);
+  return (float)raw;
+}
+float readGyroZ() {
+  long raw = globalVar_get(rawGyZ, &age);
+  return (float)raw;
+}
 float readHeadingDeg()         { 
   // Get calculated heading from compass (in 1/10 degrees)
   long heading = globalVar_get(calcHeading, &age);
@@ -352,6 +369,9 @@ void publishTelemetry(const TelemetryFrame& t) {
     "\"uf\":%.1f,"
     "\"ub\":%.1f,"
     "\"yaw_rate\":%.2f,"
+    "\"gy_x\":%.2f,"
+    "\"gy_y\":%.2f,"
+    "\"gy_z\":%.2f,"
     "\"heading\":%.1f,"
     "\"compass\":%.1f,"
     "\"mag_x\":%.2f,"
@@ -368,7 +388,8 @@ void publishTelemetry(const TelemetryFrame& t) {
     "}",
     chipId, (unsigned)t.seq, (unsigned long)t.tMs, modeToString(t.mode),
     t.filt.ul, t.filt.ur, t.filt.uf, t.filt.ub,
-    t.filt.yawRate, t.filt.heading, t.filt.compass,
+    t.filt.yawRate, t.filt.gyX, t.filt.gyY, t.filt.gyZ,
+    t.filt.heading, t.filt.compass,
     t.filt.magX, t.filt.magY, t.filt.magZ,
     t.filt.accX, t.filt.accY, t.filt.accZ,
     t.feat.width, t.feat.centerError,
@@ -395,6 +416,9 @@ void filterSensors(const RawSensors& raw, FilteredSensors& filt) {
   filt.ub = ema(filt.ub, raw.ub, cfg.usAlpha);
 
   filt.yawRate = ema(filt.yawRate, raw.yawRate, cfg.imuAlpha);
+  filt.gyX = ema(filt.gyX, raw.gyX, cfg.imuAlpha);
+  filt.gyY = ema(filt.gyY, raw.gyY, cfg.imuAlpha);
+  filt.gyZ = ema(filt.gyZ, raw.gyZ, cfg.imuAlpha);
   filt.heading = ema(filt.heading, raw.heading, cfg.imuAlpha);
   
   // Filter compass values
@@ -458,10 +482,6 @@ Command computeExploreCommand(const Features& feat, const FilteredSensors& filt)
     return cmd;
   }
 
-  if (!isnan(filt.uf) && filt.uf < cfg.frontSlowDist) {
-    cmd.motorPwm = cfg.pwmSlow;
-  }
-
   // Corridor-centering
   if (!isnan(feat.centerError)) {
     if (feat.centerError > cfg.centerDeadband) {
@@ -491,7 +511,11 @@ Command computeExploreCommand(const Features& feat, const FilteredSensors& filt)
 Command computeRecoverCommand(const Features& feat, const FilteredSensors& filt, uint32_t nowMs) {
   Command cmd;
 
+  // If something is behind us, skip reversing and go to the turn step
   uint32_t dt = nowMs - g_recoverStartMs;
+  if (feat.rearBlocked) {
+    dt = cfg.recoverReverseMs;
+  }
 
   // Step 1: reverse
   if (dt < cfg.recoverReverseMs) {
@@ -882,6 +906,9 @@ void loop() {
         g_raw.uf = readUltrasonicFrontCm();
         g_raw.ub = readUltrasonicBackCm();
         g_raw.yawRate = readYawRateDegPerSec();
+        g_raw.gyX = readGyroX();
+        g_raw.gyY = readGyroY();
+        g_raw.gyZ = readGyroZ();
         g_raw.heading = readHeadingDeg();
         g_raw.magX = readMagneticX();
         g_raw.magY = readMagneticY();

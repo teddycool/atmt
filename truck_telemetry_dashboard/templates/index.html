@@ -234,6 +234,26 @@
                                                 </div>
                                             </div>
                                             <div class="imu-section">
+                                                <h4>Gyroscope</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="gy-x-${truck_id}">-</span>
+                                                        <unit>°/s</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="gy-y-${truck_id}">-</span>
+                                                        <unit>°/s</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="gy-z-${truck_id}">-</span>
+                                                        <unit>°/s</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="imu-section">
                                                 <h4>Magnetometer</h4>
                                                 <div class="imu-values">
                                                     <div class="imu-item">
@@ -337,7 +357,6 @@
             // Control commands
             updates.push(() => updateElement(`motor-pwm-${truck_id}`, data.cmd_pwm || '-', 'textContent'));
             updates.push(() => updateSteeringIndicator(`steering-${truck_id}`, data.cmd_steer));
-            updates.push(() => updateBooleanIndicator(`front-blocked-${truck_id}`, data.front_blocked));
 
             // Navigation data with NaN handling
             updates.push(() => updateElement(`corridor-width-${truck_id}`, 
@@ -357,6 +376,16 @@
                 (data.acc_y !== undefined && !isNaN(data.acc_y) && isFinite(data.acc_y)) ? data.acc_y.toFixed(2) : '-', 'textContent'));
             updates.push(() => updateElement(`acc-z-${truck_id}`, 
                 (data.acc_z !== undefined && !isNaN(data.acc_z) && isFinite(data.acc_z)) ? data.acc_z.toFixed(2) : '-', 'textContent'));
+            
+            // Gyroscope data with NaN handling
+            // DEBUG: Uncomment the next line to see gyroscope data in browser console
+            // console.log(`🔄 Gyro data for ${truck_id}:`, {gy_x: data.gy_x, gy_y: data.gy_y, gy_z: data.gy_z});
+            updates.push(() => updateElement(`gy-x-${truck_id}`, 
+                (data.gy_x !== undefined && !isNaN(data.gy_x) && isFinite(data.gy_x)) ? data.gy_x.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`gy-y-${truck_id}`, 
+                (data.gy_y !== undefined && !isNaN(data.gy_y) && isFinite(data.gy_y)) ? data.gy_y.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`gy-z-${truck_id}`, 
+                (data.gy_z !== undefined && !isNaN(data.gy_z) && isFinite(data.gy_z)) ? data.gy_z.toFixed(2) : '-', 'textContent'));
             
             // Magnetometer data with NaN handling
             updates.push(() => updateElement(`mag-x-${truck_id}`, 
