@@ -47,6 +47,25 @@ OBSTACLES = [
     (140, 120, 25, 25),
 ]
 
+# ── Magnetometer simulation ───────────────────────────────────────────────────
+# North is aligned with +Y (the longest side of the field).
+# Truck local frame: X = forward, Y = left, Z = down.
+# Earth's horizontal field B_h points North (+Y world); vertical B_z points down.
+#   mag_x = B_h * sin(heading)   [forward component; max when heading = 90° = North]
+#   mag_y = B_h * cos(heading)   [left component;    max when heading =  0° = East ]
+#   mag_z = B_z                  [vertical; constant]
+# Compass bearing recoverable as: atan2(mag_x, mag_y) == heading (radians).
+MAG_HORIZONTAL = 30.0   # µT — horizontal field strength
+MAG_VERTICAL   = 40.0   # µT — vertical field strength (pointing down)
+MAG_NOISE_UT   =  0.5   # µT — sensor noise (±)
+
+# ── Accelerometer simulation ───────────────────────────────────────────────────
+# Truck local frame: X = forward, Y = left, Z = up.
+# On a flat surface the sensor reads gravity as +G on Z.
+# acc_x / acc_y come from projecting Δvelocity (world frame) onto truck axes.
+G             = 9.81   # m/s²
+ACC_NOISE_MS2 = 0.05   # m/s² — typical MPU6050 noise floor
+
 # ── MQTT settings ─────────────────────────────────────────────────────────────
 
 MQTT_BROKER  = "192.168.2.2"
@@ -273,6 +292,14 @@ class Truck:
         self.t_ms = 0
         self.strategy = strategy or ReactiveExplore()
 
+        # Velocity tracking for accelerometer simulation (world frame, cm/s)
+        self._vx           = 0.0
+        self._vy           = 0.0
+        # Computed each tick; consumed by payload()
+        self._acc_x_ms2    = 0.0   # forward acceleration  (m/s²)
+        self._acc_y_ms2    = 0.0   # lateral acceleration  (m/s²)
+        self._yaw_rate_dps = 0.0   # yaw rate (deg/s)
+
     def sensors(self):
         return {
             "ul": sense(self.x, self.y, self.heading, 270),  # left  = heading - 90°
@@ -284,35 +311,69 @@ class Truck:
     def step(self):
         """Advance one simulation tick."""
         s = self.sensors()
+
+        prev_x, prev_y, prev_heading = self.x, self.y, self.heading
         self.strategy.step(self, s)
+
+        # Compute velocity (cm/s) and acceleration (m/s²) from position change
+        dt   = 1.0 / TICK_RATE_HZ
+        new_vx = (self.x - prev_x) / dt
+        new_vy = (self.y - prev_y) / dt
+        ax_world_cms2 = (new_vx - self._vx) / dt   # cm/s²
+        ay_world_cms2 = (new_vy - self._vy) / dt
+
+        # Project world acceleration onto truck local axes (X=forward, Y=left)
+        angle   = math.radians(self.heading)
+        cos_h, sin_h = math.cos(angle), math.sin(angle)
+        self._acc_x_ms2 = (ax_world_cms2 * cos_h  + ay_world_cms2 * sin_h)  / 100.0
+        self._acc_y_ms2 = (ax_world_cms2 * -sin_h + ay_world_cms2 * cos_h)  / 100.0
+
+        # Yaw rate: heading change per second (signed, deg/s)
+        delta_h = (self.heading - prev_heading + 180) % 360 - 180  # wrap to ±180
+        self._yaw_rate_dps = delta_h * TICK_RATE_HZ
+
+        self._vx = new_vx
+        self._vy = new_vy
         self.seq  += 1
         self.t_ms += int(1000 / TICK_RATE_HZ)
 
     def payload(self):
-        s = self.sensors()
+        s     = self.sensors()
+        angle = math.radians(self.heading)
+
+        # Magnetometer: project Earth's horizontal field onto truck local axes
+        mag_x = MAG_HORIZONTAL * math.sin(angle) + random.gauss(0, MAG_NOISE_UT)
+        mag_y = MAG_HORIZONTAL * math.cos(angle) + random.gauss(0, MAG_NOISE_UT)
+        mag_z = MAG_VERTICAL                      + random.gauss(0, MAG_NOISE_UT)
+
+        # Compass bearing derived from mag (matches truck heading by construction)
+        compass = math.degrees(math.atan2(mag_x, mag_y)) % 360
+
         return {
-            "truck_id":     TRUCK_ID,
-            "seq":          self.seq,
-            "t_ms":         self.t_ms,
-            "mode":         "EXPLORE",
-            "ul":           s["ul"],
-            "ur":           s["ur"],
-            "uf":           s["uf"],
-            "ub":           s["ub"],
-            "yaw_rate":     0,
-            "heading":      0,
-            "compass":      0,
-            "mag_x":        0,
-            "mag_y":        0,
-            "mag_z":        0,
-            "acc_x":        0,
-            "acc_y":        0,
-            "acc_z":        0,
-            "width":        0,
-            "center_error": 0,
-            "front_blocked": False,
-            "cmd_pwm":      0,
-            "cmd_steer":    "STRAIGHT",
+            "truck_id":      TRUCK_ID,
+            "seq":           self.seq,
+            "t_ms":          self.t_ms,
+            "mode":          "EXPLORE",
+            "x":             round(self.x, 2),
+            "y":             round(self.y, 2),
+            "ul":            s["ul"],
+            "ur":            s["ur"],
+            "uf":            s["uf"],
+            "ub":            s["ub"],
+            "yaw_rate":      round(self._yaw_rate_dps + random.gauss(0, 0.1), 2),
+            "heading":       round(self.heading, 1),
+            "compass":       round(compass, 1),
+            "mag_x":         round(mag_x, 2),
+            "mag_y":         round(mag_y, 2),
+            "mag_z":         round(mag_z, 2),
+            "acc_x":         round(self._acc_x_ms2 + random.gauss(0, ACC_NOISE_MS2), 3),
+            "acc_y":         round(self._acc_y_ms2 + random.gauss(0, ACC_NOISE_MS2), 3),
+            "acc_z":         round(G              + random.gauss(0, ACC_NOISE_MS2), 3),
+            "width":         round(s["ul"] + s["ur"], 1),
+            "center_error":  round(s["ur"] - s["ul"], 1),
+            "front_blocked": s["uf"] < OBSTACLE_MARGIN,
+            "cmd_pwm":       0,
+            "cmd_steer":     "STRAIGHT",
         }
 
 
