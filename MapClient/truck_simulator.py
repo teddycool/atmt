@@ -123,6 +123,130 @@ class ReactiveExplore(ExploreStrategy):
             truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
 
 
+class EmbeddedExplore(ExploreStrategy):
+    """Mirrors the ESP32 embedded control loop (z_main_control_loop.cpp).
+
+    State machine: EXPLORE → RECOVER → EXPLORE
+    Sensors are filtered with an exponential moving average.
+    Steering uses corridor centering with a deadband and hysteresis.
+    Recovery backs up then turns away from the closer wall.
+    """
+
+    # ── Config (mirrors ControlConfig) ────────────────────────────────────────
+    FRONT_STOP_DIST    = 12.0   # cm  — emergency stop
+    FRONT_SLOW_DIST    = 20.0   # cm  — reduce speed
+    SIDE_MIN_DIST      =  6.0   # cm  — side collision avoidance
+    CENTER_DEADBAND    =  3.0   # cm  — corridor centering tolerance
+    STEER_HOLD         =  3     # consecutive ticks before steer change takes effect
+    US_ALPHA           =  0.35  # EMA smoothing factor for ultrasonics
+    STUCK_FRONT_MS     =  700   # ms front must be blocked before recovery
+    RECOVER_REVERSE_MS =  500   # ms spent reversing
+    RECOVER_TURN_MS    =  600   # ms spent turning after reverse
+
+    def __init__(self):
+        self.state = "EXPLORE"
+        self._filt = {"ul": None, "ur": None, "uf": None, "ub": None}
+        self._pending_steer = "STRAIGHT"
+        self._steer_count = 0
+        self._committed_steer = "STRAIGHT"
+        self._front_blocked_since_ms = None
+        self._recover_start_ms = None
+
+    # ── Internal helpers ───────────────────────────────────────────────────────
+
+    def _filter(self, sensors):
+        for k in self._filt:
+            prev = self._filt[k]
+            self._filt[k] = sensors[k] if prev is None else (
+                self.US_ALPHA * sensors[k] + (1 - self.US_ALPHA) * prev
+            )
+        return dict(self._filt)
+
+    def _hysteresis(self, steer):
+        """Return committed steer only after STEER_HOLD consecutive identical commands."""
+        if steer == self._pending_steer:
+            self._steer_count += 1
+        else:
+            self._pending_steer = steer
+            self._steer_count = 1
+        if self._steer_count >= self.STEER_HOLD:
+            self._committed_steer = steer
+        return self._committed_steer
+
+    def _apply_motion(self, truck, speed_frac, steer):
+        """Move truck one tick. speed_frac ∈ [-1, 1]; steer ∈ LEFT/STRAIGHT/RIGHT."""
+        if steer == "LEFT":
+            truck.heading = (truck.heading - TURN_ANGLE) % 360
+        elif steer == "RIGHT":
+            truck.heading = (truck.heading + TURN_ANGLE) % 360
+        dist = TRUCK_SPEED * speed_frac
+        angle = math.radians(truck.heading)
+        nx = truck.x + dist * math.cos(angle)
+        ny = truck.y + dist * math.sin(angle)
+        truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
+        truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
+
+    # ── Strategy entry point ───────────────────────────────────────────────────
+
+    def step(self, truck, sensors):
+        f = self._filter(sensors)
+        t_ms = truck.t_ms
+        front_blocked = f["uf"] < self.FRONT_STOP_DIST
+
+        if self.state == "EXPLORE":
+            # Stuck detection — transition to RECOVER after STUCK_FRONT_MS
+            if front_blocked:
+                if self._front_blocked_since_ms is None:
+                    self._front_blocked_since_ms = t_ms
+                elif (t_ms - self._front_blocked_since_ms) >= self.STUCK_FRONT_MS:
+                    self.state = "RECOVER"
+                    self._recover_start_ms = t_ms
+                    self._front_blocked_since_ms = None
+                    return
+            else:
+                self._front_blocked_since_ms = None
+
+            # Speed — priority: front distance
+            if front_blocked:
+                speed_frac = 0.0
+            elif f["uf"] < self.FRONT_SLOW_DIST:
+                speed_frac = 80 / 90
+            else:
+                speed_frac = 1.0
+
+            # Steer — priority: front blocked > side avoidance > corridor centering
+            if front_blocked:
+                steer = "RIGHT" if f["ul"] < f["ur"] else "LEFT"
+            elif f["ul"] < self.SIDE_MIN_DIST:
+                steer = "RIGHT"
+                speed_frac = min(speed_frac, 80 / 90)
+            elif f["ur"] < self.SIDE_MIN_DIST:
+                steer = "LEFT"
+                speed_frac = min(speed_frac, 80 / 90)
+            else:
+                center_error = f["ur"] - f["ul"]
+                if center_error > self.CENTER_DEADBAND:
+                    steer = "RIGHT"
+                elif center_error < -self.CENTER_DEADBAND:
+                    steer = "LEFT"
+                else:
+                    steer = "STRAIGHT"
+
+            steer = self._hysteresis(steer)
+            self._apply_motion(truck, speed_frac, steer)
+
+        elif self.state == "RECOVER":
+            elapsed = t_ms - self._recover_start_ms
+            if elapsed < self.RECOVER_REVERSE_MS:
+                self._apply_motion(truck, -80 / 90, "STRAIGHT")
+            elif elapsed < self.RECOVER_REVERSE_MS + self.RECOVER_TURN_MS:
+                steer = "RIGHT" if f["ul"] < f["ur"] else "LEFT"
+                self._apply_motion(truck, 80 / 90, steer)
+            else:
+                self.state = "EXPLORE"
+                self._apply_motion(truck, 1.0, "STRAIGHT")
+
+
 # ── Truck state ───────────────────────────────────────────────────────────────
 
 class Truck:
@@ -218,13 +342,20 @@ class MQTTPublisher:
 
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
-def run(broker, port, dry_run):
+STRATEGIES = {
+    "reactive": ReactiveExplore,
+    "embedded": EmbeddedExplore,
+}
+
+
+def run(broker, port, dry_run, strategy_name):
     publisher = MQTTPublisher(broker, port) if not dry_run else None
-    truck = Truck()
+    truck = Truck(strategy=STRATEGIES[strategy_name]())
     interval = 1.0 / TICK_RATE_HZ
 
     print(f"[SIM] Field {FIELD_WIDTH}x{FIELD_HEIGHT} cm  |  "
-          f"truck starts at ({truck.x:.0f},{truck.y:.0f})  heading={truck.heading:.0f}°")
+          f"truck starts at ({truck.x:.0f},{truck.y:.0f})  heading={truck.heading:.0f}°  "
+          f"strategy={strategy_name}")
     print(f"[SIM] Publishing every {interval*1000:.0f} ms  (Ctrl-C to stop)\n")
 
     try:
@@ -252,5 +383,7 @@ if __name__ == "__main__":
     parser.add_argument("--port",    default=MQTT_PORT, type=int, help="MQTT broker port")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print JSON to stdout instead of publishing to MQTT")
+    parser.add_argument("--strategy", default="reactive", choices=STRATEGIES,
+                        help="Explore strategy: reactive (default) or embedded")
     args = parser.parse_args()
-    run(args.broker, args.port, args.dry_run)
+    run(args.broker, args.port, args.dry_run, args.strategy)
