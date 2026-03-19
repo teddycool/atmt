@@ -1,16 +1,16 @@
 # Task
 
 ## Active Task
-Add real-time path visualization to the truck simulator.
+Port the ESP32 control loop from `EmbeddedSw/src/z_main_control_loop.cpp` to a clean
+Python file (`MapClient/embedded_control.py`).
 
 ## Scope / Constraints
-- Add `--visualize` flag to `truck_simulator.py`.
-- When active: show a live matplotlib window with red room boundary, obstacles in red, dashed path line, and current-position dot.
-- Simulation logic and MQTT publishing must be unchanged.
-- Visualization runs on the main thread (matplotlib requirement); simulation runs in a daemon thread.
-- No new files — add the visualizer class directly to `truck_simulator.py`.
+- Faithful translation of the C++ logic — same state machine, same config defaults, same algorithm order.
+- Simple and readable; no extra features beyond what the C++ does.
+- Must be compatible with `truck_simulator.py`'s `ExploreStrategy` interface (`step(truck, sensors)`).
+- No modification to `truck_simulator.py` unless the user asks.
 
 ## Definition of Done
-- `python truck_simulator.py --dry-run --visualize` opens a live window that updates in real time.
-- Room boundary is drawn in red; path is a dashed line; current position is a dot.
-- Stopping with Ctrl-C closes cleanly.
+- `embedded_control.py` exists in `MapClient/`.
+- Contains `EmbeddedController` with the same IDLE→EXPLORE→RECOVER state machine.
+- Config defaults match the C++ `ControlConfig` struct exactly.

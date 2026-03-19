@@ -1,5 +1,12 @@
 # Project History
 
+## 2026-03-19 — Created embedded_control.py (ajuan)
+- Faithful Python port of `EmbeddedSw/src/z_main_control_loop.cpp`.
+- `EmbeddedController` class: IDLE→EXPLORE→RECOVER state machine, EMA sensor filtering,
+  corridor centering, side avoidance, steering hysteresis, timed recovery sequence.
+- Config defaults match C++ `ControlConfig` exactly (frontStopDist=12, recoverReverseMs=1000, etc.).
+- Compatible with `truck_simulator.py` ExploreStrategy interface.
+
 ## 2026-03-19 — Added real-time path visualization to truck_simulator.py (ajuan)
 - Added `SimVisualizer` class to `truck_simulator.py`: matplotlib window with red room boundary, red obstacle rectangles, dashed steelblue path line, current-position dot. FuncAnimation at 150 ms; thread-safe with a lock.
 - Added `--visualize` CLI flag; matplotlib import guarded like paho-mqtt.

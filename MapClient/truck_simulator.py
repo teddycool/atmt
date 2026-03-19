@@ -11,6 +11,8 @@ import threading
 import argparse
 import importlib
 
+from embedded_control import EmbeddedController
+
 try:
     import paho.mqtt.client as mqtt
     MQTT_AVAILABLE = True
@@ -35,7 +37,7 @@ FIELD_HEIGHT = 240.0   # cm
 TRUCK_SPEED       = 1    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
 TURN_ANGLE        = 15.0   # degrees per tick when turning
 SENSOR_MAX_RANGE  = 750.0  # cm  (ultrasound max reading)
-SENSOR_NOISE_CM   = 5    # ±cm random noise on each sensor
+SENSOR_NOISE_CM   = 2.5    # ±cm random noise on each sensor
 OBSTACLE_MARGIN   = 20.0   # cm  — turn when any front sensor is closer than this
 TICK_RATE_HZ      = 5      # simulation ticks per second (= MQTT publish rate)
 
@@ -429,8 +431,9 @@ class SimVisualizer:
 # ── Main loop ─────────────────────────────────────────────────────────────────
 
 STRATEGIES = {
-    "reactive": ReactiveExplore,
-    "embedded": EmbeddedExplore,
+    "reactive":  ReactiveExplore,
+    "embedded":  EmbeddedExplore,
+    "embedded2": EmbeddedController,   # faithful port of z_main_control_loop.cpp
 }
 
 
@@ -493,8 +496,8 @@ if __name__ == "__main__":
     parser.add_argument("--port",    default=MQTT_PORT, type=int, help="MQTT broker port")
     parser.add_argument("--dry-run", action="store_true",
                         help="Print JSON to stdout instead of publishing to MQTT")
-    parser.add_argument("--strategy", default="embedded", choices=STRATEGIES,
-                        help="Explore strategy: embedded (default) or reactive")
+    parser.add_argument("--strategy", default="embedded2", choices=STRATEGIES,
+                        help="Explore strategy: embedded2 (default) or reactive")
     parser.add_argument("--visualize", action="store_true",
                         help="Open a real-time matplotlib window showing the truck path")
     parser.add_argument("--no-obstacles", action="store_true",
