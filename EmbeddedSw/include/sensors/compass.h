@@ -13,4 +13,10 @@ private:
  
 };
 
+// Calibration functions
+void forceCalibrationMode();  // Call this to manually start calibration
+void updateBackgroundCalibration(float magX, float magY, float magZ);  // Auto-calibration during driving
+bool loadCalibrationFromEEPROM();
+void saveCalibrationToEEPROM();
+
 #endif

@@ -133,121 +133,162 @@
                 <div class="truck-row-header">
                     🚛 Truck ID: ${truck_id}
                 </div>
-                <div class="truck-cards">
-                    <!-- Vehicle Status -->
-                    <div class="card vehicle-status">
-                        <h2>🚗 Vehicle Status</h2>
-                        <div class="status-grid">
-                            <div class="status-item">
+                <div class="truck-content">
+                    <!-- Control Status (Top Row) -->
+                    <div class="card control-status">
+                        <h2>🎛️ Control Status</h2>
+                        <div class="control-grid">
+                            <div class="control-item">
                                 <label>Mode:</label>
                                 <span id="mode-${truck_id}" class="mode-badge">-</span>
                             </div>
-                            <div class="status-item">
+                            <div class="control-item">
+                                <label>Motor PWM:</label>
+                                <span id="motor-pwm-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Steering:</label>
+                                <span id="steering-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
                                 <label>Sequence:</label>
                                 <span id="sequence-${truck_id}">-</span>
                             </div>
-                            <div class="status-item">
-                                <label>Runtime:</label>
-                                <span id="runtime-${truck_id}">-</span>
-                            </div>
-                            <div class="status-item">
+                            <div class="control-item">
                                 <label>Last Update:</label>
                                 <span id="last-update-${truck_id}">-</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Sensor Readings -->
-                    <div class="card sensors">
-                        <h2>� Sensors</h2>
-                        <div class="sensor-display">
-                            <div class="sensor-layout">
-                                <div class="sensor front" id="sensor-front-${truck_id}">
-                                    <label>FRONT</label>
-                                    <value>-</value>
-                                    <unit>cm</unit>
+                    <!-- Two-Widget Layout -->
+                    <div class="two-widget-layout">
+                        <!-- Left Widget: Sensor Data -->
+                        <div class="card sensor-widget">
+                            <h2>📡 Sensors</h2>
+                            <div class="sensor-widget-content">
+                                <!-- Left Side: Distance Sensors + Truck -->
+                                <div class="sensor-left-side">
+                                    <div class="sensor-display">
+                                        <div class="sensor-layout">
+                                            <div class="sensor front" id="sensor-front-${truck_id}">
+                                                <label>FRONT</label>
+                                                <value>-</value>
+                                                <unit>cm</unit>
+                                            </div>
+                                            <div class="sensor-row">
+                                                <div class="sensor left" id="sensor-left-${truck_id}">
+                                                    <label>LEFT</label>
+                                                    <value>-</value>
+                                                    <unit>cm</unit>
+                                                </div>
+                                                <div class="truck-icon">
+                                                    <img src="{{ url_for('static', filename='ctruck.png') }}" alt="Truck ${truck_id}">
+                                                </div>
+                                                <div class="sensor right" id="sensor-right-${truck_id}">
+                                                    <label>RIGHT</label>
+                                                    <value>-</value>
+                                                    <unit>cm</unit>
+                                                </div>
+                                            </div>
+                                            <div class="sensor back" id="sensor-back-${truck_id}">
+                                                <label>BACK</label>
+                                                <value>-</value>
+                                                <unit>cm</unit>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="sensor-row">
-                                    <div class="sensor left" id="sensor-left-${truck_id}">
-                                        <label>LEFT</label>
-                                        <value>-</value>
-                                        <unit>cm</unit>
+                                
+                                <!-- Right Side: IMU + Compass -->
+                                <div class="sensor-right-side">
+                                    <div class="compass-section">
+                                        <div class="sensor compass" id="sensor-compass-${truck_id}">
+                                            <label>COMPASS</label>
+                                            <value>-</value>
+                                            <unit>°</unit>
+                                        </div>
                                     </div>
-                                    <div class="truck-icon">
-                                        <img src="{{ url_for('static', filename='ctruck.png') }}" alt="Truck ${truck_id}">
-                                    </div>
-                                    <div class="sensor right" id="sensor-right-${truck_id}">
-                                        <label>RIGHT</label>
-                                        <value>-</value>
-                                        <unit>cm</unit>
+                                    
+                                    <div class="imu-data-compact">
+                                        <h3>📊 IMU Data</h3>
+                                        <div class="imu-sections">
+                                            <div class="imu-section">
+                                                <h4>Accelerometer</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="acc-x-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="acc-y-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="acc-z-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="imu-section">
+                                                <h4>Magnetometer</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="mag-x-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="mag-y-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="mag-z-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="sensor-bottom-row">
-                                    <div class="sensor back" id="sensor-back-${truck_id}">
-                                        <label>BACK</label>
-                                        <value>-</value>
+                            </div>
+                        </div>
+
+                        <!-- Right Widget: Navigation -->
+                        <div class="card navigation-widget">
+                            <h2>🧭 Navigation</h2>
+                            <div class="nav-content">
+                                <div class="nav-grid">
+                                    <div class="nav-item">
+                                        <label>Track Width:</label>
+                                        <span id="corridor-width-${truck_id}">-</span>
                                         <unit>cm</unit>
                                     </div>
-                                    <div class="sensor compass" id="sensor-compass-${truck_id}">
-                                        <label>COMPASS</label>
-                                        <value>-</value>
+                                    <div class="nav-item">
+                                        <label>Center Error:</label>
+                                        <span id="center-error-${truck_id}">-</span>
+                                        <unit>cm</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Front Blocked:</label>
+                                        <span id="front-blocked-${truck_id}">-</span>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Heading:</label>
+                                        <span id="heading-${truck_id}">-</span>
                                         <unit>°</unit>
                                     </div>
+                                    <div class="nav-item">
+                                        <label>Yaw Rate:</label>
+                                        <span id="yaw-rate-${truck_id}">-</span>
+                                        <unit>°/s</unit>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Control Commands -->
-                    <div class="card controls">
-                        <h2>🎮 Control Commands</h2>
-                        <div class="control-grid">
-                            <div class="control-item">
-                                <label>Motor PWM:</label>
-                                <span id="motor-pwm-${truck_id}" class="value">-</span>
-                            </div>
-                            <div class="control-item">
-                                <label>Steering:</label>
-                                <span id="steering-${truck_id}" class="steering-indicator">-</span>
-                            </div>
-                            <div class="control-item">
-                                <label>Front Blocked:</label>
-                                <span id="front-blocked-${truck_id}" class="boolean-indicator">-</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Navigation Data -->
-                    <div class="card navigation">
-                        <h2>🧭 Navigation</h2>
-                        <div class="nav-grid">
-                            <div class="nav-item">
-                                <label>Corridor Width:</label>
-                                <span id="corridor-width-${truck_id}">-</span> cm
-                            </div>
-                            <div class="nav-item">
-                                <label>Center Error:</label>
-                                <span id="center-error-${truck_id}">-</span> cm
-                            </div>
-                            <div class="nav-item">
-                                <label>Yaw Rate:</label>
-                                <span id="yaw-rate-${truck_id}">-</span> °/s
-                            </div>
-                            <div class="nav-item">
-                                <label>Heading:</label>
-                                <span id="heading-${truck_id}">-</span> °
-                            </div>
-                            <div class="nav-item">
-                                <label>Acc X:</label>
-                                <span id="acc-x-${truck_id}">-</span>
-                            </div>
-                            <div class="nav-item">
-                                <label>Acc Y:</label>
-                                <span id="acc-y-${truck_id}">-</span>
-                            </div>
-                            <div class="nav-item">
-                                <label>Acc Z:</label>
-                                <span id="acc-z-${truck_id}">-</span>
                             </div>
                         </div>
                     </div>
@@ -298,23 +339,32 @@
             updates.push(() => updateSteeringIndicator(`steering-${truck_id}`, data.cmd_steer));
             updates.push(() => updateBooleanIndicator(`front-blocked-${truck_id}`, data.front_blocked));
 
-            // Navigation data
+            // Navigation data with NaN handling
             updates.push(() => updateElement(`corridor-width-${truck_id}`, 
-                data.width ? data.width.toFixed(1) : '-', 'textContent'));
+                (data.width !== undefined && !isNaN(data.width) && isFinite(data.width)) ? data.width.toFixed(1) : '-', 'textContent'));
             updates.push(() => updateElement(`center-error-${truck_id}`, 
-                data.center_error ? data.center_error.toFixed(1) : '-', 'textContent'));
+                (data.center_error !== undefined && !isNaN(data.center_error) && isFinite(data.center_error)) ? data.center_error.toFixed(1) : '-', 'textContent'));
             updates.push(() => updateElement(`yaw-rate-${truck_id}`, 
-                data.yaw_rate ? data.yaw_rate.toFixed(2) : '-', 'textContent'));
+                (data.yaw_rate !== undefined && !isNaN(data.yaw_rate) && isFinite(data.yaw_rate)) ? data.yaw_rate.toFixed(2) : '-', 'textContent'));
             updates.push(() => updateElement(`heading-${truck_id}`, 
-                data.heading ? data.heading.toFixed(1) : '-', 'textContent'));
+                (data.heading !== undefined && !isNaN(data.heading) && isFinite(data.heading)) ? data.heading.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateBooleanIndicator(`front-blocked-${truck_id}`, data.front_blocked));
             
-            // Accelerometer data
+            // Accelerometer data with NaN handling
             updates.push(() => updateElement(`acc-x-${truck_id}`, 
-                data.acc_x ? data.acc_x.toFixed(0) : '-', 'textContent'));
+                (data.acc_x !== undefined && !isNaN(data.acc_x) && isFinite(data.acc_x)) ? data.acc_x.toFixed(2) : '-', 'textContent'));
             updates.push(() => updateElement(`acc-y-${truck_id}`, 
-                data.acc_y ? data.acc_y.toFixed(0) : '-', 'textContent'));
+                (data.acc_y !== undefined && !isNaN(data.acc_y) && isFinite(data.acc_y)) ? data.acc_y.toFixed(2) : '-', 'textContent'));
             updates.push(() => updateElement(`acc-z-${truck_id}`, 
-                data.acc_z ? data.acc_z.toFixed(0) : '-', 'textContent'));
+                (data.acc_z !== undefined && !isNaN(data.acc_z) && isFinite(data.acc_z)) ? data.acc_z.toFixed(2) : '-', 'textContent'));
+            
+            // Magnetometer data with NaN handling
+            updates.push(() => updateElement(`mag-x-${truck_id}`, 
+                (data.mag_x !== undefined && !isNaN(data.mag_x) && isFinite(data.mag_x)) ? data.mag_x.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateElement(`mag-y-${truck_id}`, 
+                (data.mag_y !== undefined && !isNaN(data.mag_y) && isFinite(data.mag_y)) ? data.mag_y.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateElement(`mag-z-${truck_id}`, 
+                (data.mag_z !== undefined && !isNaN(data.mag_z) && isFinite(data.mag_z)) ? data.mag_z.toFixed(1) : '-', 'textContent'));
             
             // Execute all updates in a single batch
             updates.forEach(updateFn => updateFn());
@@ -363,15 +413,20 @@
             if (!sensorEl) return;
             
             const valueEl = sensorEl.querySelector('value');
-            const newText = (value !== undefined && value !== null) ? value.toFixed(1) : '-';
+            let newText = '-';
+            
+            // Check for valid numeric value (not NaN, null, or undefined)
+            if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
+                newText = value.toFixed(1);
+            }
             
             // Only update if value changed
             if (valueEl.textContent !== newText) {
                 valueEl.textContent = newText;
                 
-                // Update CSS classes for color coding
+                // Update CSS classes for color coding (only for valid values)
                 sensorEl.classList.remove('close', 'medium', 'far');
-                if (value !== undefined && value !== null) {
+                if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
                     if (value < 15) {
                         sensorEl.classList.add('close');
                     } else if (value < 50) {
@@ -388,7 +443,12 @@
             if (!compassEl) return;
             
             const valueEl = compassEl.querySelector('value');
-            const newText = (value !== undefined && value !== null) ? value.toFixed(0) + '°' : '-';
+            let newText = '-';
+            
+            // Check for valid numeric value (not NaN, null, or undefined)
+            if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
+                newText = value.toFixed(0) + '°';
+            }
             
             // Only update if value changed
             if (valueEl.textContent !== newText) {

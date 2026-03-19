@@ -11,7 +11,7 @@ The 'brain' of the truck is an ESP32-wroom 8MB and the sensors used are ultrason
 
 I now have 2 of these trucks and I am planning to use them for ScaniaHack 2026.
 
-This branch (ScaniaHack2026) is 'cleaned-up' with alot of updated informatiom and will focus on the work at this years ScaniaHack 19th and 20th of March.
+This branch (ScaniaHack2026) is 'cleaned-up' and updated with alot of informatiom and will focus on the work at this years ScaniaHack 19th and 20th of March.
 
 ## ScaniaHack 2026 goal (only software)
 We will use the 2 toy-trucks to build a cooperative, learning-based autonomous 'racing' system. The trucks will explore, map, optimize speed, and avoid obstacles on a simple bounded track.

@@ -48,6 +48,46 @@ A real-time web dashboard for monitoring autonomous truck telemetry data via MQT
 
 Just use the provided launch script:
 ```bash
+./start_dashboard.sh
+```
+
+## Development Mode
+
+For layout development and testing without real trucks or MQTT infrastructure, use the development mode:
+
+### 🔧 Development Dashboard Setup
+
+The development mode provides:
+- **Mock telemetry data** - Realistic sensor data generated locally  
+- **No MQTT dependency** - Works without network infrastructure
+- **Faster iteration** - Perfect for layout and UI development
+- **Multiple truck simulation** - Tests multi-truck display
+
+#### Quick Start (Development)
+```bash
+cd truck_telemetry_dashboard
+./start_dev.sh
+```
+
+Or manually:
+```bash
+cd truck_telemetry_dashboard
+python3 -m venv dashboard_env
+source dashboard_env/bin/activate
+pip install flask
+python3 dashboard_dev.py
+```
+
+The development dashboard will be available at **http://localhost:5001**
+
+#### Development vs Production
+| Feature | Development | Production |
+|---------|-------------|------------|
+| **Data Source** | Mock/Random | Real MQTT |
+| **Network** | None required | MQTT Broker |
+| **Trucks** | 2 simulated | Real hardware |
+| **Updates** | 1Hz fixed | 1Hz throttled |
+| **Use Case** | Layout/UI work | Live monitoring |
 cd truck_telemetry_dashboard
 chmod +x start_dashboard.sh
 ./start_dashboard.sh

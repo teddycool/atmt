@@ -100,7 +100,8 @@ void Steer::direction(int direction)
 
   case SERVO:
   {
-    int dutyCycle = map(direction, -100, 100, steer_servo_min, steer_servo_max) + steer_servo_adjust; // Duty cycle range for 1ms to 2ms
+    // Reverse the mapping to fix inverted steering
+    int dutyCycle = map(direction, -100, 100, steer_servo_max, steer_servo_min) + steer_servo_adjust; // Swapped min/max to fix direction
     ledcWrite(SERVO_pwmChannel, dutyCycle);
     break;
   }
@@ -109,16 +110,16 @@ void Steer::direction(int direction)
   {
     if (direction < 0)
     {
-      // LEFT
-      digitalWrite(MOTOR_left_pin, HIGH);
-      digitalWrite(MOTOR_right_pin, LOW);
+      // LEFT - swap pins to fix inversion
+      digitalWrite(MOTOR_left_pin, LOW);
+      digitalWrite(MOTOR_right_pin, HIGH);
       digitalWrite(MOTOR_enable_pin, HIGH);
     }
     else if (direction > 0)
     {
-      // RIGHT
-      digitalWrite(MOTOR_left_pin, LOW);
-      digitalWrite(MOTOR_right_pin, HIGH);
+      // RIGHT - swap pins to fix inversion
+      digitalWrite(MOTOR_left_pin, HIGH);
+      digitalWrite(MOTOR_right_pin, LOW);
       digitalWrite(MOTOR_enable_pin, HIGH);
     }
     else
@@ -133,16 +134,16 @@ void Steer::direction(int direction)
     int value = abs(direction * MOTOR_MAX_PWM / 100);
     if (direction < 0)
     {
-      // LEFT
-      digitalWrite(MOTOR_left_pin, HIGH);
-      digitalWrite(MOTOR_right_pin, LOW);
+      // LEFT - swap pins to fix inversion
+      digitalWrite(MOTOR_left_pin, LOW);
+      digitalWrite(MOTOR_right_pin, HIGH);
       ledcWrite(MOTOR_PWM_channel, value);
     }
     else if (direction > 0)
     {
-      // RIGHT
-      digitalWrite(MOTOR_left_pin, LOW);
-      digitalWrite(MOTOR_right_pin, HIGH);
+      // RIGHT - swap pins to fix inversion
+      digitalWrite(MOTOR_left_pin, HIGH);
+      digitalWrite(MOTOR_right_pin, LOW);
       ledcWrite(MOTOR_PWM_channel, value);
     }
     else

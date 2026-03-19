@@ -129,7 +129,7 @@ void ACCsensor::Begin()
     xTaskCreate(
         accel_task,  // Task function
         "acceltask", // Task name
-        2000,        // Stack size (in words, not bytes)
+        4096,        // Stack size – increased from 2000; Wire+Serial+semaphores need headroom
         NULL,        // Task input parameter
         2,           // Task priority
         NULL         // Task handle

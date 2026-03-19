@@ -65,6 +65,42 @@ def on_disconnect(client, userdata, rc):
     is_connected = False
     socketio.emit('connection_status', {'connected': False})
 
+def sanitize_telemetry_data(data):
+    """
+    Sanitize telemetry data to handle NaN values and other edge cases.
+    NaN values are converted to None which JSON serializes as null.
+    """
+    import math
+    
+    def sanitize_value(value):
+        if value is None:
+            return None
+        if isinstance(value, float):
+            if math.isnan(value):
+                return None
+            elif math.isinf(value):
+                return None
+        return value
+    
+    sanitized = {}
+    nan_keys = []
+    
+    for key, value in data.items():
+        original_value = value
+        sanitized_value = sanitize_value(value)
+        sanitized[key] = sanitized_value
+        
+        # Track which keys had NaN values for logging
+        if original_value != sanitized_value and isinstance(original_value, float):
+            nan_keys.append(key)
+    
+    # Log if any NaN values were found
+    if nan_keys:
+        truck_id = data.get('truck_id', 'unknown')
+        print(f"🔧 Sanitized NaN values in truck {truck_id}: {nan_keys}")
+    
+    return sanitized
+
 def on_message(client, userdata, msg):
     """Callback when MQTT message is received"""
     global latest_telemetry_by_truck, telemetry_history_by_truck, last_update_time, last_dashboard_emission_by_truck
@@ -79,6 +115,9 @@ def on_message(client, userdata, msg):
         print(f"📄 Decoded payload: {payload}")
         
         telemetry_data = json.loads(payload)
+        
+        # Sanitize NaN and infinity values before processing
+        telemetry_data = sanitize_telemetry_data(telemetry_data)
         
         # Get truck_id, use 'unknown' if not provided
         truck_id = telemetry_data.get('truck_id', 'unknown')

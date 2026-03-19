@@ -20,7 +20,7 @@ Now, when the development environment is installed, clone the github repo.
 
 * Create a github-account if you don't already have one
 * Navigate to https://github.com/teddycool/atmt
-* Click the fork-button to get your own copy of this repo. Use the default and fork only the main-branch.
+* Click the fork-button to get your own copy of this repo. Make sure to use the right branch.
 * Now you have your own copy of the repo in your account and you can start working with it.
 * Go the the local directory for your projects and start a terminal
 * Run "git clone and the path to your fork to get all the files

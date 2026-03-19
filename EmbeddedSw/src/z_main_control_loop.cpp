@@ -7,6 +7,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ArduinoOTA.h>
+#include "esp_system.h"
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+#include "esp_bt.h"
 #include <variables/setget.h>
 #include <sensors/usensor.h>
 #include <sensors/accsensor.h>
@@ -42,9 +46,9 @@ struct ControlConfig {
   uint8_t steerHoldSamples = 3;    // hysteresis before changing steering
 
   // PWM
-  int pwmExplore = 70;
-  int pwmSlow    = 45;
-  int pwmReverse = -50;
+  int pwmExplore = 90;
+  int pwmSlow    = 80;
+  int pwmReverse = -80;
 
   // Timing
   uint32_t telemetryPeriodMs = 1000;  // 1 Hz (memory-safe for long runtime)
@@ -210,9 +214,11 @@ float readYawRateDegPerSec()   {
 }
 float readHeadingDeg()         { 
   // Get calculated heading from compass (in 1/10 degrees)
-  // long heading = globalVar_get(calcHeading, &age);
-  // return heading / 10.0f;
-  return 0.0f;  // Return 0 when compass is disabled
+  long heading = globalVar_get(calcHeading, &age);
+  if (heading == -1) {
+    return NAN; // Invalid heading from compass task
+  }
+  return heading / 10.0f;
 }
 
 float readMagneticX() {
@@ -228,22 +234,6 @@ float readMagneticY() {
 float readMagneticZ() {
   long val = globalVar_get(rawMagZ, &age);
   return (float)val;
-}
-
-float readCompassHeading() {
-  // Calculate compass heading from magnetic field X and Y
-  float magX = readMagneticX();
-  float magY = readMagneticY();
-  
-  if (isnan(magX) || isnan(magY)) {
-    return NAN;
-  }
-  
-  float heading = atan2(magY, magX) * 180.0 / PI;
-  if (heading < 0) {
-    heading += 360.0;
-  }
-  return heading;
 }
 
 float readAccelerationX() {
@@ -290,6 +280,9 @@ bool mqttConnected() {
 
 void mqttLoop() {
   mqtt.loop();
+  
+  // TODO: Add command processing if mqtt class supports it
+  // Example: check for calibration commands, mode changes, etc.
 }
 
 void publishTelemetry(const TelemetryFrame& t) {
@@ -359,7 +352,8 @@ void readSensors(RawSensors& raw) {
   raw.magX = readMagneticX();
   raw.magY = readMagneticY();
   raw.magZ = readMagneticZ();
-  raw.compass = readCompassHeading();
+  // Use heading for compass field (they're the same now)
+  raw.compass = raw.heading;
   
   // Read accelerometer values
   raw.accX = readAccelerationX();
@@ -380,7 +374,8 @@ void filterSensors(const RawSensors& raw, FilteredSensors& filt) {
   filt.magX = ema(filt.magX, raw.magX, cfg.imuAlpha);
   filt.magY = ema(filt.magY, raw.magY, cfg.imuAlpha);
   filt.magZ = ema(filt.magZ, raw.magZ, cfg.imuAlpha);
-  filt.compass = ema(filt.compass, raw.compass, cfg.imuAlpha);
+  // Compass is same as heading now
+  filt.compass = filt.heading;
   
   // Filter accelerometer values
   filt.accX = ema(filt.accX, raw.accX, cfg.imuAlpha);
@@ -565,23 +560,62 @@ void maybePublishTelemetry(uint32_t nowMs) {
 // Setup / loop
 // -----------------------------
 void setup() {
+  // ---- Power / stability fixes for truck #2 ----
+  // Disable brownout detector: WiFi radio draws ~400mA peak which can dip
+  // the supply below the default 2.77V threshold on weaker power rails.
+  // Remove this line once you have confirmed stable power on all trucks.
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+
+  // Release Bluetooth memory (~50 KB heap) and cut ~100 mA peak RF current.
+  // We only use WiFi, so BT is never needed.
+  esp_bt_controller_deinit();
+
   Serial.begin(115200);
-  Serial.println("Starting Control Loop...");
+  delay(200);  // let UART settle before first print
+
+  // Print the reset reason from the PREVIOUS run - useful for diagnosis
+  esp_reset_reason_t rstReason = esp_reset_reason();
+  const char* rstStr = "UNKNOWN";
+  switch (rstReason) {
+    case ESP_RST_POWERON:   rstStr = "POWER_ON"; break;
+    case ESP_RST_SW:        rstStr = "SW_RESTART (esp_restart)"; break;
+    case ESP_RST_PANIC:     rstStr = "PANIC (exception/abort)"; break;
+    case ESP_RST_INT_WDT:   rstStr = "INT_WATCHDOG"; break;
+    case ESP_RST_TASK_WDT:  rstStr = "TASK_WATCHDOG"; break;
+    case ESP_RST_WDT:       rstStr = "OTHER_WATCHDOG"; break;
+    case ESP_RST_DEEPSLEEP: rstStr = "DEEP_SLEEP"; break;
+    case ESP_RST_BROWNOUT:  rstStr = "BROWNOUT"; break;
+    default: break;
+  }
+  Serial.println("Last reset reason: " + String(rstStr) + " (" + String((int)rstReason) + ")");
+
+  Serial.println("🏁 Starting Racing Control Loop...");
+  Serial.println("💡 For compass calibration, use the calibration program first!");
+  Serial.println("   - Upload 'calibration' environment for setup");  
+  Serial.println("   - Upload 'control_loop' environment for racing");
 
   // Get chip ID for MQTT
   uint64_t chipIdHex = ESP.getEfuseMac();
   chipId = String((uint32_t)(chipIdHex >> 32), HEX) + String((uint32_t)chipIdHex, HEX);
   Serial.println("Chip ID: " + chipId);
 
-  // Set WiFi hostname to chipId
+  // Initialize global variables (semaphores) before any FreeRTOS calls
+  globalVar_init();
+
+  // WiFi must be put in STA mode BEFORE setHostname() - in espressif32@3.5.0
+  // tcpip_adapter_set_hostname() is called immediately and crashes if the
+  // adapter isn't initialized yet (SW_CPU_RESET / NULL dereference).
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(true);  // clear any stale credentials/state from NVS
+  delay(100);
+
+  // Now safe to set hostname
   WiFi.setHostname(chipId.c_str());
   Serial.println("WiFi hostname set to: " + chipId);
 
-  // Initialize global variables
-  globalVar_init();
-
-  // Connect to Wi-Fi first (with timeout and error handling)
+  // Connect to Wi-Fi
   Serial.println("Connecting to WiFi...");
+  Serial.flush();  // ensure output is flushed before WiFi radio starts
   WiFi.begin(ssid, password);
   
   int wifiTimeout = 0;
@@ -647,10 +681,19 @@ void setup() {
   
   delay(500); // Delay between sensor initializations
   
-  // Skip compass initialization (was causing stack overflow)
-  Serial.println("Compass disabled to prevent crashes");
+  // Initialize compass with improved error handling
+  Serial.println("Initializing compass...");
+  Serial.printf("[MEMORY] Before compass init: %d bytes\n", ESP.getFreeHeap());
+  
+  try {
+    compass.Begin();
+    Serial.println("Compass initialization completed");
+  } catch (...) {
+    Serial.println("Compass initialization failed, continuing without compass...");
+  }
   
   delay(500);
+  Serial.printf("[MEMORY] After compass init: %d bytes\n", ESP.getFreeHeap());
   Serial.printf("[MEMORY] After accel init: %d bytes\n", ESP.getFreeHeap());
   
   // Initialize ultrasonic sensors with delays and error handling
