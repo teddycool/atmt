@@ -4,11 +4,11 @@ Truck Sensor & SLAM Visualizer
 Left panel : Rolling time-series for the 4 ultrasonic distance sensors (all trucks).
 Right panel: Real-time SLAM occupancy grid + trajectory (first truck discovered).
 
-SLAM approach:
-  - Occupancy grid with log-odds updates.
-  - Bresenham ray tracing marks cells as free (along ray) or occupied (endpoint).
-  - Pose comes from ground-truth x/y/heading in payload (simulator) or is
-    dead-reckoned from compass + cmd_pwm for the real truck.
+SLAM pose estimation (IMU dead-reckoning):
+  - Heading: complementary filter — gyro (yaw_rate) for short-term accuracy,
+    magnetometer (mag_x/mag_y) for long-term drift correction.
+  - Speed: cmd_pwm sets the baseline; acc_x corrects for acceleration/deceleration.
+  - Occupancy grid updated via Bresenham ray tracing on each ultrasonic reading.
 """
 
 import json
@@ -18,11 +18,18 @@ import threading
 from collections import deque
 
 import numpy as np
+from scipy import ndimage as _ndi
 import matplotlib
 matplotlib.use("TkAgg")          # interactive backend — requires python3-tk
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.animation as animation
+
+try:
+    from skimage import measure as _sk_measure
+    _HAS_SKIMAGE = True
+except ImportError:
+    _HAS_SKIMAGE = False
 
 try:
     import paho.mqtt.client as mqtt
@@ -46,6 +53,11 @@ SENSOR_LABELS  = {"uf": "Front (UF)", "ub": "Back (UB)",
                   "ul": "Left (UL)",  "ur": "Right (UR)"}
 
 TRUCK_COLORS   = ["tab:blue", "tab:orange", "tab:green", "tab:purple", "tab:red"]
+
+# SLAM IMU parameters
+MAX_SPEED_CMS  = 25.0   # cm/s at 100 % PWM — used as dead-reckoning baseline
+MAG_WEIGHT     =  0.05  # complementary filter: weight given to magnetometer heading
+                         # (1 - MAG_WEIGHT) goes to gyro; higher → faster mag correction
 
 # SLAM grid parameters
 GRID_RESOLUTION = 2.0    # cm per cell
@@ -150,18 +162,35 @@ class TruckState:
                 if s in msg:
                     self.history[s].append(float(msg[s]))
 
+# ── Angle helper ──────────────────────────────────────────────────────────────
+
+def _blend_angles(a_deg, b_deg, weight_b):
+    """Blend two angles using unit-vector averaging to handle wrap-around correctly."""
+    a, b = math.radians(a_deg), math.radians(b_deg)
+    x = (1.0 - weight_b) * math.cos(a) + weight_b * math.cos(b)
+    y = (1.0 - weight_b) * math.sin(a) + weight_b * math.sin(b)
+    return math.degrees(math.atan2(y, x)) % 360
+
+
 # ── SLAM processor (single truck) ────────────────────────────────────────────
 
 class SLAMProcessor:
     """
     Maintains an occupancy grid and trajectory for one truck.
-    Pose source priority: x/y/heading fields in payload → dead-reckoning.
+
+    Pose estimation uses IMU dead-reckoning:
+      - Heading: complementary filter combining yaw_rate (gyro) and
+        mag_x/mag_y (magnetometer).  Gyro dominates short-term; mag corrects
+        long-term drift.
+      - Speed: cmd_pwm sets the baseline velocity; acc_x adjusts for
+        acceleration and deceleration events.
+
     All grid/trajectory writes are protected by self.lock.
     """
 
     def __init__(self):
         self.grid       = OccupancyGrid(GRID_RESOLUTION, GRID_SIZE)
-        self.trajectory = []        # (rel_x, rel_y) relative to first observed position
+        self.trajectory = []   # (rel_x, rel_y) relative to first observed position
         self.heading    = 0.0
         self.start_x    = None
         self.start_y    = None
@@ -171,24 +200,51 @@ class SLAMProcessor:
         self.lock       = threading.Lock()
 
     def update(self, msg):
-        t_ms    = msg.get("t_ms", 0)
-        heading = float(msg.get("compass") or msg.get("heading") or 0.0)
-        self.heading = heading
+        t_ms = msg.get("t_ms", 0)
 
-        # ── Pose
-        if "x" in msg and "y" in msg:
-            self._x = float(msg["x"])
-            self._y = float(msg["y"])
+        # ── Heading: complementary filter (gyro + magnetometer) ──────────────
+        mag_x    = float(msg.get("mag_x", 0.0))
+        mag_y    = float(msg.get("mag_y", 0.0))
+        yaw_rate = float(msg.get("yaw_rate", 0.0))   # deg/s
+
+        if self._prev_t_ms is not None:
+            dt_s = (t_ms - self._prev_t_ms) / 1000.0
+
+            # Gyro prediction: integrate yaw rate
+            heading_gyro = (self.heading + yaw_rate * dt_s) % 360
+
+            if mag_x != 0.0 or mag_y != 0.0:
+                # Magnetometer-derived heading (North = +Y → atan2(mag_x, mag_y))
+                heading_mag = math.degrees(math.atan2(mag_x, mag_y)) % 360
+                # Blend: gyro accurate short-term, mag corrects long-term drift
+                self.heading = _blend_angles(heading_gyro, heading_mag, MAG_WEIGHT)
+            else:
+                self.heading = heading_gyro
+
+            # ── Speed: cmd_pwm baseline + acc_x correction ───────────────────
+            cmd_pwm = float(msg.get("cmd_pwm", 0))
+            acc_x   = float(msg.get("acc_x", 0.0))   # m/s², forward axis
+
+            # Baseline from motor command
+            base_speed = (cmd_pwm / 100.0) * MAX_SPEED_CMS   # cm/s (signed)
+
+            # Acceleration contribution for this tick (m/s² → cm/s)
+            acc_contrib = acc_x * 100.0 * dt_s
+
+            speed_cms = base_speed + acc_contrib
+
+            # Update position
+            angle    = math.radians(self.heading)
+            self._x += speed_cms * dt_s * math.cos(angle)
+            self._y += speed_cms * dt_s * math.sin(angle)
+
         else:
-            if self._prev_t_ms is not None:
-                dt_s      = (t_ms - self._prev_t_ms) / 1000.0
-                cmd_pwm   = float(msg.get("cmd_pwm", 0))
-                speed_cms = (abs(cmd_pwm) / 100.0) * 25.0
-                if cmd_pwm < 0:
-                    speed_cms = -speed_cms
-                angle   = math.radians(heading)
-                self._x += speed_cms * dt_s * math.cos(angle)
-                self._y += speed_cms * dt_s * math.sin(angle)
+            # First message: initialise heading from magnetometer or compass field
+            if mag_x != 0.0 or mag_y != 0.0:
+                self.heading = math.degrees(math.atan2(mag_x, mag_y)) % 360
+            else:
+                self.heading = float(msg.get("compass") or msg.get("heading") or 0.0)
+
         self._prev_t_ms = t_ms
 
         # Fix origin on first message
@@ -202,7 +258,7 @@ class SLAMProcessor:
         sensors = {k: float(msg.get(k, SENSOR_MAX)) for k in SENSORS}
 
         with self.lock:
-            self.grid.update(rel_x, rel_y, heading, sensors)
+            self.grid.update(rel_x, rel_y, self.heading, sensors)
             self.trajectory.append((rel_x, rel_y))
 
 # ── MQTT listener ─────────────────────────────────────────────────────────────
@@ -265,6 +321,86 @@ class MQTTListener:
         if truck_id == self.slam_id:
             self.slam.update(payload)
 
+# ── Boundary estimation ───────────────────────────────────────────────────────
+
+def _rdp_simplify(pts, epsilon):
+    """Ramer-Douglas-Peucker polyline simplification. pts: (N,2) array."""
+    if len(pts) < 3:
+        return pts
+    start, end = pts[0], pts[-1]
+    seg = end - start
+    seg_len = np.linalg.norm(seg)
+    if seg_len == 0:
+        dists = np.linalg.norm(pts - start, axis=1)
+    else:
+        dists = np.abs(np.cross(seg, start - pts)) / seg_len
+    idx = int(np.argmax(dists))
+    if dists[idx] > epsilon:
+        left  = _rdp_simplify(pts[:idx + 1], epsilon)
+        right = _rdp_simplify(pts[idx:],     epsilon)
+        return np.vstack([left[:-1], right])
+    return np.array([start, end])
+
+
+def estimate_boundary(prob_map, resolution, origin_cell):
+    """
+    Generic room boundary estimation — makes no assumption about room shape.
+
+    Algorithm:
+      1. Threshold high-confidence occupied cells (wall hits).
+      2. Dilate to bridge gaps between sparse ultrasonic hits.
+      3. Fill interior holes to get a solid room footprint.
+      4. Trace the outer contour (marching squares via skimage, or gradient fallback).
+      5. Convert cell indices → world coordinates (cm).
+      6. Simplify with RDP to reduce noise.
+
+    Returns (x, y) world-coordinate arrays forming the boundary polygon,
+    or None if not enough data has been collected yet.
+    """
+    occupied = prob_map > 0.60
+    if occupied.sum() < 30:
+        return None
+
+    # Bridge gaps between sparse wall readings (~15 cm dilation)
+    dil_px  = max(2, int(15.0 / resolution))
+    dilated = _ndi.binary_dilation(occupied, iterations=dil_px)
+
+    # Fill the room interior so the contour traces the outer hull
+    filled  = _ndi.binary_fill_holes(dilated)
+
+    # Trace the boundary
+    if _HAS_SKIMAGE:
+        contours = _sk_measure.find_contours(filled.astype(float), 0.5)
+        if not contours:
+            return None
+        # Largest contour = outer room boundary
+        contour = max(contours, key=len)          # shape (N, 2): [row, col]
+        rows, cols = contour[:, 0], contour[:, 1]
+    else:
+        # Fallback: edge pixels via gradient magnitude
+        sx   = _ndi.sobel(filled.astype(float), axis=1)
+        sy   = _ndi.sobel(filled.astype(float), axis=0)
+        edge = np.hypot(sx, sy) > 0.5
+        rows, cols = np.where(edge)
+        if len(rows) < 10:
+            return None
+
+    # Convert (row, col) → world (x, y) in cm
+    x = (cols - origin_cell) * resolution
+    y = (rows - origin_cell) * resolution
+
+    pts = np.column_stack([x, y])
+
+    # Simplify: ~2 cm tolerance keeps meaningful corners, drops pixel-level noise
+    pts = _rdp_simplify(pts, epsilon=2.0 * resolution)
+
+    # Close the polygon
+    if not np.allclose(pts[0], pts[-1]):
+        pts = np.vstack([pts, pts[0]])
+
+    return pts[:, 0], pts[:, 1]
+
+
 # ── Visualization ─────────────────────────────────────────────────────────────
 
 def run_visualizer(listener: MQTTListener):
@@ -313,15 +449,19 @@ def run_visualizer(listener: MQTTListener):
                                 linewidth=1.2, label="trajectory", zorder=3)
     (pos_dot,)   = ax_slam.plot([], [], "o", color="tab:red",
                                 markersize=7, zorder=5, label="position")
+    (boundary_line,) = ax_slam.plot([], [], "-", color="darkorange",
+                                    linewidth=2.0, label="est. boundary", zorder=4)
     heading_arrow = [None]   # mutable ref so the closure can replace it each frame
     ax_slam.legend(fontsize=7, loc="upper right")
 
     # Per-truck sensor line artists: {truck_id: {sensor_key: Line2D}}
-    sensor_lines = {}
+    sensor_lines  = {}
+    frame_counter = [0]   # mutable counter for boundary recompute cadence
 
     def update(_frame):
         artists = []
         trucks  = dict(listener.trucks)
+        frame_counter[0] += 1
 
         # ── Sensor charts
         for truck_id, state in trucks.items():
@@ -378,6 +518,14 @@ def run_visualizer(listener: MQTTListener):
                     zorder=6,
                 )
                 artists += [traj_line, pos_dot, heading_arrow[0]]
+
+                # Recompute boundary every 10 frames (~5 s at 500 ms interval)
+                if frame_counter[0] % 10 == 0:
+                    result = estimate_boundary(
+                        prob, GRID_RESOLUTION, slam.grid.origin)
+                    if result is not None:
+                        boundary_line.set_data(result[0], result[1])
+                artists.append(boundary_line)
 
         return artists
 

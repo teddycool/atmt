@@ -67,7 +67,7 @@ class EmbeddedController:
                 self._apply(truck, cfg.pwm_reverse, self._recover_steer)
 
     def _apply(self, truck, pwm, steer):
-        """Translate (pwm, steer) into heading + position change."""
+        """Translate (pwm, steer) into heading + position change, and record the command."""
         if steer == "LEFT":
             truck.heading = (truck.heading - TURN_ANGLE) % 360
         elif steer == "RIGHT":
@@ -77,3 +77,5 @@ class EmbeddedController:
         angle = math.radians(truck.heading)
         truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, truck.x + dist * math.cos(angle)))
         truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, truck.y + dist * math.sin(angle)))
+        truck.cmd_pwm   = pwm
+        truck.cmd_steer = steer

@@ -34,12 +34,19 @@ except ImportError:
 FIELD_WIDTH  = 120.0   # cm
 FIELD_HEIGHT = 240.0   # cm
 
-TRUCK_SPEED       = 1    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
+TRUCK_SPEED       = 100    # cm per tick  (= 10 cm/s at TICK_RATE_HZ=5)
 TURN_ANGLE        = 15.0   # degrees per tick when turning
 SENSOR_MAX_RANGE  = 750.0  # cm  (ultrasound max reading)
 SENSOR_NOISE_CM   = 2.5    # ±cm random noise on each sensor
 OBSTACLE_MARGIN   = 20.0   # cm  — turn when any front sensor is closer than this
 TICK_RATE_HZ      = 5      # simulation ticks per second (= MQTT publish rate)
+
+# ── Straight-line heading drift ───────────────────────────────────────────────
+# Models the real truck's imperfect straight-line driving.
+# A hidden bias (deg/tick) performs a bounded random walk; applied to heading
+# only while cmd_steer == "STRAIGHT" so intentional turns are unaffected.
+HEADING_DRIFT_STEP = 0.15  # deg — max change of the bias per tick (walk step size)
+HEADING_DRIFT_MAX  = 1.0   # deg/tick — clamp on bias magnitude
 
 # Static rectangular obstacles: list of (x, y, width, height) in cm
 OBSTACLES = [
@@ -143,15 +150,21 @@ class ReactiveExplore(ExploreStrategy):
         if self.turn_ticks_left > 0:
             truck.heading = (truck.heading + self.turning * TURN_ANGLE) % 360
             self.turn_ticks_left -= 1
+            truck.cmd_pwm   = 0
+            truck.cmd_steer = "RIGHT" if self.turning == 1 else "LEFT"
         elif sensors["uf"] < OBSTACLE_MARGIN:
             self.turning = 1 if sensors["ur"] >= sensors["ul"] else -1
             self.turn_ticks_left = random.randint(3, 8)
+            truck.cmd_pwm   = 0
+            truck.cmd_steer = "STRAIGHT"
         else:
             angle = math.radians(truck.heading)
             nx = truck.x + TRUCK_SPEED * math.cos(angle)
             ny = truck.y + TRUCK_SPEED * math.sin(angle)
             truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
             truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
+            truck.cmd_pwm   = 100
+            truck.cmd_steer = "STRAIGHT"
 
 
 class EmbeddedExplore(ExploreStrategy):
@@ -216,6 +229,8 @@ class EmbeddedExplore(ExploreStrategy):
         ny = truck.y + dist * math.sin(angle)
         truck.x = max(1.0, min(FIELD_WIDTH  - 1.0, nx))
         truck.y = max(1.0, min(FIELD_HEIGHT - 1.0, ny))
+        truck.cmd_pwm   = round(speed_frac * 100)
+        truck.cmd_steer = steer
 
     # ── Strategy entry point ───────────────────────────────────────────────────
 
@@ -292,6 +307,13 @@ class Truck:
         self.t_ms = 0
         self.strategy = strategy or ReactiveExplore()
 
+        # Last command issued by the strategy — written by each strategy's step()
+        self.cmd_pwm   = 0
+        self.cmd_steer = "STRAIGHT"
+
+        # Slowly-varying heading bias for realistic straight-line drift
+        self._heading_drift = 0.0   # deg/tick — bounded random walk
+
         # Velocity tracking for accelerometer simulation (world frame, cm/s)
         self._vx           = 0.0
         self._vy           = 0.0
@@ -314,6 +336,17 @@ class Truck:
 
         prev_x, prev_y, prev_heading = self.x, self.y, self.heading
         self.strategy.step(self, s)
+
+        # Straight-line drift: bias wanders as a bounded random walk, applied
+        # only when the strategy is not actively steering.
+        if self.cmd_steer == "STRAIGHT":
+            self._heading_drift += random.gauss(0, HEADING_DRIFT_STEP)
+            self._heading_drift  = max(-HEADING_DRIFT_MAX,
+                                       min(HEADING_DRIFT_MAX, self._heading_drift))
+            self.heading = (self.heading + self._heading_drift) % 360
+        else:
+            # Let the bias decay slowly back toward zero while turning
+            self._heading_drift *= 0.8
 
         # Compute velocity (cm/s) and acceleration (m/s²) from position change
         dt   = 1.0 / TICK_RATE_HZ
@@ -354,8 +387,6 @@ class Truck:
             "seq":           self.seq,
             "t_ms":          self.t_ms,
             "mode":          "EXPLORE",
-            "x":             round(self.x, 2),
-            "y":             round(self.y, 2),
             "ul":            s["ul"],
             "ur":            s["ur"],
             "uf":            s["uf"],
@@ -372,8 +403,8 @@ class Truck:
             "width":         round(s["ul"] + s["ur"], 1),
             "center_error":  round(s["ur"] - s["ul"], 1),
             "front_blocked": s["uf"] < OBSTACLE_MARGIN,
-            "cmd_pwm":       0,
-            "cmd_steer":     "STRAIGHT",
+            "cmd_pwm":       self.cmd_pwm,
+            "cmd_steer":     self.cmd_steer,
         }
 
 
