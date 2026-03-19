@@ -104,11 +104,9 @@ package-lock.json
 *.sqlite3
 
 # Secrets and credentials
-secrets.h
 *.key
 *.pem
 *.p12
-*secret*
 *password*
 *credential*
 
