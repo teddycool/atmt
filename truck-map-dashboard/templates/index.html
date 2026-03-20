@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truck Mapping Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚛 Truck Mapping Dashboard</h1>
+            <div class="status-bar">
+                <span id="connection-status" class="status-indicator disconnected">Disconnected</span>
+                <span id="mqtt-status" class="status-indicator disconnected">MQTT: Disconnected</span>
+                <span id="last-update">Last update: Never</span>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Map Display -->
+            <section class="map-section">
+                <h2>Live Map</h2>
+                <div class="map-container">
+                    <img id="map-image" src="data:image/png;base64," alt="Loading map...">
+                    <div class="map-controls">
+                        <button id="refresh-map" class="btn btn-primary">Refresh Map</button>
+                        <button id="reset-map" class="btn btn-warning">Reset Map</button>
+                        <button id="export-map" class="btn btn-success">Export PNG</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Truck Status -->
+            <section class="status-section">
+                <h2>Truck Status</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <label>Truck ID:</label>
+                        <span id="truck-id">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Mode:</label>
+                        <span id="truck-mode">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Position:</label>
+                        <span id="truck-position">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Heading:</label>
+                        <span id="truck-heading">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>PWM:</label>
+                        <span id="truck-pwm">-</span>
+                    </div>
+                    <div class="status-item">
+                        <label>Steering:</label>
+                        <span id="truck-steer">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sensor Readings -->
+            <section class="sensors-section">
+                <h2>Sensor Readings (cm)</h2>
+                <div class="sensors-grid">
+                    <div class="sensor-item">
+                        <label>Front (UF):</label>
+                        <span id="sensor-uf" class="sensor-value">-</span>
+                    </div>
+                    <div class="sensor-item">
+                        <label>Back (UB):</label>
+                        <span id="sensor-ub" class="sensor-value">-</span>
+                    </div>
+                    <div class="sensor-item">
+                        <label>Left (UL):</label>
+                        <span id="sensor-ul" class="sensor-value">-</span>
+                    </div>
+                    <div class="sensor-item">
+                        <label>Right (UR):</label>
+                        <span id="sensor-ur" class="sensor-value">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Statistics -->
+            <section class="stats-section">
+                <h2>System Stats</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <label>HTTP Packets:</label>
+                        <span id="stat-http-packets">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>MQTT Packets:</label>
+                        <span id="stat-mqtt-packets">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Last Seq:</label>
+                        <span id="stat-seq">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Map Updates:</label>
+                        <span id="stat-updates">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Occupied Cells:</label>
+                        <span id="stat-occupied">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Free Cells:</label>
+                        <span id="stat-free">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <label>Errors:</label>
+                        <span id="stat-errors">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Test Controls -->
+            <section class="controls-section">
+                <h2>Test Controls</h2>
+                <div class="controls-grid">
+                    <button id="start-simulator" class="btn btn-primary">Start Simulator</button>
+                    <button id="stop-simulator" class="btn btn-secondary">Stop Simulator</button>
+                    <button id="view-debug" class="btn btn-info">Debug Info</button>
+                    <button id="clear-data" class="btn btn-danger">Clear Data</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Debug Modal -->
+        <div id="debug-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Debug Information</h2>
+                <pre id="debug-content"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket connection
+        const socket = io();
+        let isConnected = false;
+
+        // UI Elements
+        const connectionStatus = document.getElementById('connection-status');
+        const mqttStatus = document.getElementById('mqtt-status');
+        const lastUpdateSpan = document.getElementById('last-update');
+        const mapImage = document.getElementById('map-image');
+
+        // Initialize WebSocket handlers
+        socket.on('connect', () => {
+            isConnected = true;
+            connectionStatus.textContent = 'Connected';
+            connectionStatus.className = 'status-indicator connected';
+            console.log('Connected to server');
+        });
+
+        socket.on('disconnect', () => {
+            isConnected = false;
+            connectionStatus.textContent = 'Disconnected';
+            connectionStatus.className = 'status-indicator disconnected';
+            console.log('Disconnected from server');
+        });
+
+        socket.on('initial_status', (data) => {
+            console.log('Received initial status:', data);
+            updateDisplay(data);
+        });
+
+        socket.on('telemetry_update', (data) => {
+            console.log('Received telemetry update');
+            updateTelemetryDisplay(data);
+            updateLastUpdate();
+        });
+
+        socket.on('map_update', (data) => {
+            console.log('Received map update');
+            mapImage.src = 'data:image/png;base64,' + data.image_data;
+        });
+
+        // Update display functions
+        function updateTelemetryDisplay(data) {
+            // Update truck status
+            document.getElementById('truck-id').textContent = data.truck_id || '-';
+            document.getElementById('truck-mode').textContent = data.mode || '-';
+            document.getElementById('truck-position').textContent = 
+                data.pose ? `(${data.pose.x.toFixed(2)}, ${data.pose.y.toFixed(2)})` : '-';
+            document.getElementById('truck-heading').textContent = 
+                data.pose ? `${data.pose.heading_deg.toFixed(1)}°` : '-';
+            document.getElementById('truck-pwm').textContent = 
+                data.commands ? data.commands.pwm : '-';
+            document.getElementById('truck-steer').textContent = 
+                data.commands ? data.commands.steer : '-';
+
+            // Update sensor readings
+            if (data.sensors) {
+                document.getElementById('sensor-uf').textContent = data.sensors.uf.toFixed(1);
+                document.getElementById('sensor-ub').textContent = data.sensors.ub.toFixed(1);
+                document.getElementById('sensor-ul').textContent = data.sensors.ul.toFixed(1);
+                document.getElementById('sensor-ur').textContent = data.sensors.ur.toFixed(1);
+            }
+
+            // Update sequence number
+            document.getElementById('stat-seq').textContent = data.seq || '-';
+        }
+
+        function updateDisplay(data) {
+            if (data.pose) {
+                document.getElementById('truck-position').textContent = 
+                    `(${data.pose.x.toFixed(2)}, ${data.pose.y.toFixed(2)})`;
+                document.getElementById('truck-heading').textContent = 
+                    `${data.pose.heading_deg.toFixed(1)}°`;
+            }
+
+            if (data.stats) {
+                if (data.stats.telemetry) {
+                    document.getElementById('stat-http-packets').textContent = 
+                        data.stats.http_packets || '-';
+                    document.getElementById('stat-mqtt-packets').textContent = 
+                        data.stats.mqtt_packets || '-';
+                    document.getElementById('stat-seq').textContent = 
+                        data.stats.telemetry.last_seq || '-';
+                }
+                
+                if (data.stats.mapping) {
+                    document.getElementById('stat-updates').textContent = 
+                        data.stats.mapping.update_count || '-';
+                    document.getElementById('stat-occupied').textContent = 
+                        data.stats.mapping.occupied_cells || '-';
+                    document.getElementById('stat-free').textContent = 
+                        data.stats.mapping.free_cells || '-';
+                }
+            }
+
+            // Update MQTT status if available
+            if (data.mqtt) {
+                const mqttConnected = data.mqtt.connected;
+                if (mqttConnected) {
+                    mqttStatus.textContent = 'MQTT: Connected';
+                    mqttStatus.className = 'status-indicator connected';
+                } else {
+                    mqttStatus.textContent = 'MQTT: Disconnected';
+                    mqttStatus.className = 'status-indicator disconnected';
+                }
+            }
+        }
+
+        function updateLastUpdate() {
+            const now = new Date();
+            lastUpdateSpan.textContent = `Last update: ${now.toLocaleTimeString()}`;
+        }
+
+        // Button handlers
+        document.getElementById('refresh-map').addEventListener('click', () => {
+            socket.emit('request_map_update');
+        });
+
+        document.getElementById('reset-map').addEventListener('click', () => {
+            if (confirm('Reset the map? This will clear all mapping data.')) {
+                fetch('/api/map/reset', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('Map reset successfully!');
+                            socket.emit('request_map_update');
+                        } else {
+                            alert('Error resetting map: ' + data.error);
+                        }
+                    })
+                    .catch(error => alert('Error: ' + error));
+            }
+        });
+
+        document.getElementById('export-map').addEventListener('click', () => {
+            const filename = `truck_map_${Date.now()}.png`;
+            fetch('/api/map/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: filename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(`Map exported as: ${data.filename}`);
+                } else {
+                    alert('Error exporting map: ' + data.error);
+                }
+            })
+            .catch(error => alert('Error: ' + error));
+        });
+
+        document.getElementById('view-debug').addEventListener('click', () => {
+            fetch('/api/debug')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('debug-content').textContent = 
+                        JSON.stringify(data, null, 2);
+                    document.getElementById('debug-modal').style.display = 'block';
+                })
+                .catch(error => alert('Error fetching debug info: ' + error));
+        });
+
+        // Modal handling
+        document.querySelector('.close').addEventListener('click', () => {
+            document.getElementById('debug-modal').style.display = 'none';
+        });
+
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('debug-modal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Simulator controls
+        let simulatorInterval = null;
+
+        document.getElementById('start-simulator').addEventListener('click', () => {
+            // Start sending simulated telemetry (would typically run telemetry_sim.py externally)
+            alert('To start simulator, run: python telemetry_sim.py in a separate terminal');
+        });
+
+        document.getElementById('stop-simulator').addEventListener('click', () => {
+            alert('Stop the telemetry_sim.py script manually (Ctrl+C)');
+        });
+
+        document.getElementById('clear-data').addEventListener('click', () => {
+            if (confirm('Clear all telemetry data? This cannot be undone.')) {
+                // This would require implementing a clear endpoint
+                alert('Clear data functionality not implemented in this version');
+            }
+        });
+
+        // Auto-refresh system stats
+        setInterval(() => {
+            if (isConnected) {
+                fetch('/api/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error_count !== undefined) {
+                            document.getElementById('stat-errors').textContent = data.error_count;
+                        }
+                        if (data.http_packets !== undefined) {
+                            document.getElementById('stat-http-packets').textContent = data.http_packets;
+                        }
+                        if (data.mqtt_packets !== undefined) {
+                            document.getElementById('stat-mqtt-packets').textContent = data.mqtt_packets;
+                        }
+                        
+                        // Update MQTT status
+                        if (data.mqtt) {
+                            const mqttConnected = data.mqtt.connected;
+                            if (mqttConnected) {
+                                mqttStatus.textContent = 'MQTT: Connected';
+                                mqttStatus.className = 'status-indicator connected';
+                            } else {
+                                mqttStatus.textContent = 'MQTT: Disconnected';
+                                mqttStatus.className = 'status-indicator disconnected';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching status:', error));
+            }
+        }, 5000); // Every 5 seconds
+
+        // Auto-refresh map
+        setInterval(() => {
+            if (isConnected) {
+                socket.emit('request_map_update');
+            }
+        }, 2000); // Every 2 seconds
+
+        // Initial map load
+        setTimeout(() => {
+            if (isConnected) {
+                socket.emit('request_map_update');
+            }
+        }, 1000); // After 1 second
+    </script>
+</body>
+</html>

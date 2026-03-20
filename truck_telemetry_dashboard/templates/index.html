@@ -109,6 +109,8 @@
         function handleTelemetryUpdate(update) {
             const { truck_id, data, all_trucks } = update;
             
+            console.log('*** handleTelemetryUpdate called for truck:', truck_id, 'free_heap:', data.free_heap);
+            
             // Create truck row if it doesn't exist
             if (!activeTrucks.has(truck_id)) {
                 createTruckRow(truck_id);
@@ -157,6 +159,10 @@
                             <div class="control-item">
                                 <label>Last Update:</label>
                                 <span id="last-update-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Free Heap:</label>
+                                <span id="free-heap-${truck_id}" class="heap-status">-</span>
                             </div>
                         </div>
                     </div>
@@ -327,6 +333,8 @@
                 return; // No changes, skip DOM updates
             }
             
+            console.log('updateTruckTelemetry for truck:', truck_id, ', free_heap in data:', data.free_heap);
+            
             previousValues.set(truck_id, dataHash);
             
             // Batch DOM updates to minimize layout thrashing
@@ -357,6 +365,13 @@
             // Control commands
             updates.push(() => updateElement(`motor-pwm-${truck_id}`, data.cmd_pwm || '-', 'textContent'));
             updates.push(() => updateSteeringIndicator(`steering-${truck_id}`, data.cmd_steer));
+            
+            // Free heap memory
+            console.log('*** About to push updateFreeHeap to updates array');
+            updates.push(() => {
+                console.log('*** updateFreeHeap function being executed');
+                updateFreeHeap(`free-heap-${truck_id}`, data.free_heap);
+            });
 
             // Navigation data with NaN handling
             updates.push(() => updateElement(`corridor-width-${truck_id}`, 
@@ -425,6 +440,35 @@
                 if (element.textContent !== newText) element.textContent = newText;
                 if (element.className !== newClass) element.className = newClass;
             }
+        }
+        
+        function updateFreeHeap(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            let text = '-';
+            element.className = 'heap-status';
+            
+            console.log('updateFreeHeap: elementId=' + elementId + ', value=' + value + ', type=' + typeof value);
+            console.log('updateFreeHeap: value === undefined?', value === undefined);
+            console.log('updateFreeHeap: value === null?', value === null);
+            console.log('updateFreeHeap: isNaN(value)?', isNaN(value));
+            console.log('updateFreeHeap: isFinite(value)?', isFinite(value));
+            
+            if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
+                text = value.toLocaleString() + ' B';
+                // Color code: red if below 5000, white otherwise
+                if (value < 5000) {
+                    element.classList.add('heap-low');
+                } else {
+                    element.classList.add('heap-normal');
+                }
+                console.log('updateFreeHeap: validation passed, setting text to: ' + text);
+            } else {
+                console.log('updateFreeHeap: validation failed');
+            }
+            
+            element.textContent = text;
         }
         
         function updateBooleanIndicator(elementId, value) {

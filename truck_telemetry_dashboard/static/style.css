@@ -315,6 +315,24 @@ header h1 {
     color: #0c5460;
 }
 
+/* Free heap memory status */
+.heap-status {
+    color: black !important;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.heap-status.heap-low {
+    background-color: #ff4444;
+    color: black !important;
+}
+
+.heap-status.heap-normal {
+    background-color: transparent;
+    color: black !important;
+}
+
 .truck-icon {
     padding: 10px;
     display: flex;
