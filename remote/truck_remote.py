@@ -51,7 +51,7 @@ FIELDS = [
 
 MOTOR_FWD     = 100    # full forward
 MOTOR_REV     = -80    # reverse during recovery
-DIR_MAX       = 100    # max direction value — full lock
+DIR_MAX       = 60     # max direction value
 DIR_STEP      = 10     # one steering increment
 
 
@@ -102,15 +102,19 @@ class RemoteControl:
         self._direction = 0
 
     def steer_left(self):
-        self._direction = min(DIR_MAX, self._direction + DIR_STEP)
+        self._direction = 60
 
     def steer_right(self):
-        self._direction = max(-DIR_MAX, self._direction - DIR_STEP)
+        self._direction = -60
 
     def set_steer(self, value: int):
-        """Set direction directly (clamped and snapped to DIR_STEP grid)."""
-        snapped = round(value / DIR_STEP) * DIR_STEP
-        self._direction = max(-DIR_MAX, min(DIR_MAX, snapped))
+        """Set direction — positive → 100 (left), negative → -100 (right), 0 → straight."""
+        if value > 0:
+            self._direction = 60
+        elif value < 0:
+            self._direction = -60
+        else:
+            self._direction = 0
 
     # Publish
     def flush(self, client: mqtt.Client) -> None:
