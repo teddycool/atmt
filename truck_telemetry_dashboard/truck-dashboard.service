@@ -1,0 +1,19 @@
+[Unit]
+Description=Truck Telemetry Dashboard
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+User=pi
+WorkingDirectory=/home/pi/truck_telemetry_dashboard
+Environment=PATH=/home/pi/truck_telemetry_dashboard/venv/bin
+ExecStart=/home/pi/truck_telemetry_dashboard/venv/bin/python /home/pi/truck_telemetry_dashboard/app.py
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚛 Autonomous Truck Telemetry Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <link rel="icon" href="data:,">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="{{ url_for('static', filename='ctruck.png') }}" alt="Truck" class="header-truck-icon">
+                <h1>Autonomous Truck Dashboard</h1>
+            </div>
+            <div class="status-bar">
+                <div id="mqtt-status" class="status-indicator offline">
+                    <span class="indicator"></span>
+                    <span>MQTT: Disconnected</span>
+                </div>
+                <div id="data-age" class="data-age">
+                    Last Update: Never
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="trucks-container" class="trucks-container">
+                <div class="no-trucks-message" id="no-trucks">
+                    <p>🔍 Waiting for truck telemetry data...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // WebSocket connection
+        const socket = io();
+        let lastUpdateTime = 0;
+        let activeTrucks = new Set();
+        
+        // Performance optimization: update throttling
+        let pendingUpdates = new Map(); // truck_id -> data
+        let updateScheduled = false;
+        
+        // Performance optimization: previous values for change detection
+        let previousValues = new Map(); // truck_id -> last_data_hash
+
+        // Socket event handlers
+        socket.on('connect', function() {
+            console.log('🔗 Connected to WebSocket server');
+            updateConnectionStatus(true);
+        });
+
+        socket.on('disconnect', function() {
+            console.log('🔌 Disconnected from WebSocket server');
+            updateConnectionStatus(false);
+        });
+
+        socket.on('connection_status', function(data) {
+            console.log('📡 MQTT status:', data.connected);
+            updateMqttStatus(data.connected);
+        });
+
+        socket.on('telemetry_update', function(data) {
+            console.log('📊 Telemetry update for truck:', data.truck_id, 'seq:', data.data.seq);
+            
+            // Performance optimization: batch updates using requestAnimationFrame
+            scheduleUpdate(data.truck_id, data);
+            lastUpdateTime = Date.now();
+        });
+
+        // Performance optimization: batch DOM updates
+        function scheduleUpdate(truck_id, data) {
+            // Store pending update
+            pendingUpdates.set(truck_id, data);
+            
+            // Schedule batched update if not already scheduled
+            if (!updateScheduled) {
+                updateScheduled = true;
+                requestAnimationFrame(processPendingUpdates);
+            }
+        }
+
+        function processPendingUpdates() {
+            updateScheduled = false;
+            
+            // Process all pending updates in a single frame
+            for (const [truck_id, update] of pendingUpdates) {
+                handleTelemetryUpdate(update);
+            }
+            
+            // Clear processed updates
+            pendingUpdates.clear();
+        }
+
+        socket.on('status_update', function(data) {
+            updateMqttStatus(data.mqtt_connected);
+            if (data.data_age_seconds !== null && data.data_age_seconds !== undefined) {
+                const ageSeconds = Math.floor(data.data_age_seconds);
+                document.getElementById('data-age').textContent = 
+                    `Last Update: ${ageSeconds}s ago`;
+            }
+        });
+
+        // Multi-truck management functions
+        function handleTelemetryUpdate(update) {
+            const { truck_id, data, all_trucks } = update;
+            
+            // Create truck row if it doesn't exist
+            if (!activeTrucks.has(truck_id)) {
+                createTruckRow(truck_id);
+                activeTrucks.add(truck_id);
+            }
+            
+            // Update telemetry display for this truck
+            updateTruckTelemetry(truck_id, data);
+            
+            // Hide "no trucks" message
+            document.getElementById('no-trucks').style.display = 'none';
+        }
+
+        function createTruckRow(truck_id) {
+            const container = document.getElementById('trucks-container');
+            
+            const truckRow = document.createElement('div');
+            truckRow.className = 'truck-row';
+            truckRow.id = `truck-${truck_id}`;
+            
+            truckRow.innerHTML = `
+                <div class="truck-row-header">
+                    🚛 Truck ID: ${truck_id}
+                </div>
+                <div class="truck-content">
+                    <!-- Control Status (Top Row) -->
+                    <div class="card control-status">
+                        <h2>🎛️ Control Status</h2>
+                        <div class="control-grid">
+                            <div class="control-item">
+                                <label>Mode:</label>
+                                <span id="mode-${truck_id}" class="mode-badge">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Motor PWM:</label>
+                                <span id="motor-pwm-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Steering:</label>
+                                <span id="steering-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Sequence:</label>
+                                <span id="sequence-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Last Update:</label>
+                                <span id="last-update-${truck_id}">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Two-Widget Layout -->
+                    <div class="two-widget-layout">
+                        <!-- Left Widget: Sensor Data -->
+                        <div class="card sensor-widget">
+                            <h2>📡 Sensors</h2>
+                            <div class="sensor-widget-content">
+                                <!-- Left Side: Distance Sensors + Truck -->
+                                <div class="sensor-left-side">
+                                    <div class="sensor-display">
+                                        <div class="sensor-layout">
+                                            <div class="sensor front" id="sensor-front-${truck_id}">
+                                                <label>FRONT</label>
+                                                <value>-</value>
+                                                <unit>cm</unit>
+                                            </div>
+                                            <div class="sensor-row">
+                                                <div class="sensor left" id="sensor-left-${truck_id}">
+                                                    <label>LEFT</label>
+                                                    <value>-</value>
+                                                    <unit>cm</unit>
+                                                </div>
+                                                <div class="truck-icon">
+                                                    <img src="{{ url_for('static', filename='ctruck.png') }}" alt="Truck ${truck_id}">
+                                                </div>
+                                                <div class="sensor right" id="sensor-right-${truck_id}">
+                                                    <label>RIGHT</label>
+                                                    <value>-</value>
+                                                    <unit>cm</unit>
+                                                </div>
+                                            </div>
+                                            <div class="sensor back" id="sensor-back-${truck_id}">
+                                                <label>BACK</label>
+                                                <value>-</value>
+                                                <unit>cm</unit>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Side: IMU + Compass -->
+                                <div class="sensor-right-side">
+                                    <div class="compass-section">
+                                        <div class="sensor compass" id="sensor-compass-${truck_id}">
+                                            <label>COMPASS</label>
+                                            <value>-</value>
+                                            <unit>°</unit>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="imu-data-compact">
+                                        <h3>📊 IMU Data</h3>
+                                        <div class="imu-sections">
+                                            <div class="imu-section">
+                                                <h4>Accelerometer</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="acc-x-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="acc-y-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="acc-z-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="imu-section">
+                                                <h4>Gyroscope</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="gy-x-${truck_id}">-</span>
+                                                        <unit>°/s</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="gy-y-${truck_id}">-</span>
+                                                        <unit>°/s</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="gy-z-${truck_id}">-</span>
+                                                        <unit>°/s</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="imu-section">
+                                                <h4>Magnetometer</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="mag-x-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="mag-y-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="mag-z-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Widget: Navigation -->
+                        <div class="card navigation-widget">
+                            <h2>🧭 Navigation</h2>
+                            <div class="nav-content">
+                                <div class="nav-grid">
+                                    <div class="nav-item">
+                                        <label>Track Width:</label>
+                                        <span id="corridor-width-${truck_id}">-</span>
+                                        <unit>cm</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Center Error:</label>
+                                        <span id="center-error-${truck_id}">-</span>
+                                        <unit>cm</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Front Blocked:</label>
+                                        <span id="front-blocked-${truck_id}">-</span>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Heading:</label>
+                                        <span id="heading-${truck_id}">-</span>
+                                        <unit>°</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Yaw Rate:</label>
+                                        <span id="yaw-rate-${truck_id}">-</span>
+                                        <unit>°/s</unit>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(truckRow);
+        }
+
+        function updateTruckTelemetry(truck_id, data) {
+            // Performance optimization: change detection
+            const dataHash = JSON.stringify(data);
+            const previousHash = previousValues.get(truck_id);
+            
+            if (dataHash === previousHash) {
+                return; // No changes, skip DOM updates
+            }
+            
+            previousValues.set(truck_id, dataHash);
+            
+            // Batch DOM updates to minimize layout thrashing
+            const updates = [];
+            
+            // Vehicle status updates
+            updates.push(() => updateElement(`mode-${truck_id}`, data.mode || '-', 'textContent'));
+            updates.push(() => updateModeClass(`mode-${truck_id}`, data.mode));
+            updates.push(() => updateElement(`sequence-${truck_id}`, data.seq || '-', 'textContent'));
+            
+            if (data.t_ms) {
+                const seconds = Math.floor(data.t_ms / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                const runtimeText = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                updates.push(() => updateElement(`runtime-${truck_id}`, runtimeText, 'textContent'));
+            }
+            
+            updates.push(() => updateElement(`last-update-${truck_id}`, data.received_at || '-', 'textContent'));
+
+            // Sensor readings
+            updates.push(() => updateSensorOptimized(`sensor-front-${truck_id}`, data.uf));
+            updates.push(() => updateSensorOptimized(`sensor-left-${truck_id}`, data.ul));
+            updates.push(() => updateSensorOptimized(`sensor-right-${truck_id}`, data.ur));
+            updates.push(() => updateSensorOptimized(`sensor-back-${truck_id}`, data.ub));
+            updates.push(() => updateCompassOptimized(`sensor-compass-${truck_id}`, data.compass || data.heading));
+
+            // Control commands
+            updates.push(() => updateElement(`motor-pwm-${truck_id}`, data.cmd_pwm || '-', 'textContent'));
+            updates.push(() => updateSteeringIndicator(`steering-${truck_id}`, data.cmd_steer));
+
+            // Navigation data with NaN handling
+            updates.push(() => updateElement(`corridor-width-${truck_id}`, 
+                (data.width !== undefined && !isNaN(data.width) && isFinite(data.width)) ? data.width.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateElement(`center-error-${truck_id}`, 
+                (data.center_error !== undefined && !isNaN(data.center_error) && isFinite(data.center_error)) ? data.center_error.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateElement(`yaw-rate-${truck_id}`, 
+                (data.yaw_rate !== undefined && !isNaN(data.yaw_rate) && isFinite(data.yaw_rate)) ? data.yaw_rate.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`heading-${truck_id}`, 
+                (data.heading !== undefined && !isNaN(data.heading) && isFinite(data.heading)) ? data.heading.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateBooleanIndicator(`front-blocked-${truck_id}`, data.front_blocked));
+            
+            // Accelerometer data with NaN handling
+            updates.push(() => updateElement(`acc-x-${truck_id}`, 
+                (data.acc_x !== undefined && !isNaN(data.acc_x) && isFinite(data.acc_x)) ? data.acc_x.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`acc-y-${truck_id}`, 
+                (data.acc_y !== undefined && !isNaN(data.acc_y) && isFinite(data.acc_y)) ? data.acc_y.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`acc-z-${truck_id}`, 
+                (data.acc_z !== undefined && !isNaN(data.acc_z) && isFinite(data.acc_z)) ? data.acc_z.toFixed(2) : '-', 'textContent'));
+            
+            // Gyroscope data with NaN handling
+            // DEBUG: Uncomment the next line to see gyroscope data in browser console
+            // console.log(`🔄 Gyro data for ${truck_id}:`, {gy_x: data.gy_x, gy_y: data.gy_y, gy_z: data.gy_z});
+            updates.push(() => updateElement(`gy-x-${truck_id}`, 
+                (data.gy_x !== undefined && !isNaN(data.gy_x) && isFinite(data.gy_x)) ? data.gy_x.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`gy-y-${truck_id}`, 
+                (data.gy_y !== undefined && !isNaN(data.gy_y) && isFinite(data.gy_y)) ? data.gy_y.toFixed(2) : '-', 'textContent'));
+            updates.push(() => updateElement(`gy-z-${truck_id}`, 
+                (data.gy_z !== undefined && !isNaN(data.gy_z) && isFinite(data.gy_z)) ? data.gy_z.toFixed(2) : '-', 'textContent'));
+            
+            // Magnetometer data with NaN handling
+            updates.push(() => updateElement(`mag-x-${truck_id}`, 
+                (data.mag_x !== undefined && !isNaN(data.mag_x) && isFinite(data.mag_x)) ? data.mag_x.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateElement(`mag-y-${truck_id}`, 
+                (data.mag_y !== undefined && !isNaN(data.mag_y) && isFinite(data.mag_y)) ? data.mag_y.toFixed(1) : '-', 'textContent'));
+            updates.push(() => updateElement(`mag-z-${truck_id}`, 
+                (data.mag_z !== undefined && !isNaN(data.mag_z) && isFinite(data.mag_z)) ? data.mag_z.toFixed(1) : '-', 'textContent'));
+            
+            // Execute all updates in a single batch
+            updates.forEach(updateFn => updateFn());
+        }
+        
+        // Optimized helper functions
+        function updateElement(elementId, value, property) {
+            const element = document.getElementById(elementId);
+            if (element && element[property] !== value) {
+                element[property] = value;
+            }
+        }
+        
+        function updateModeClass(elementId, mode) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const newClass = `mode-badge ${(mode || '').toLowerCase()}`;
+                if (element.className !== newClass) {
+                    element.className = newClass;
+                }
+            }
+        }
+        
+        function updateSteeringIndicator(elementId, steer) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const newText = steer || '-';
+                const newClass = `steering-indicator ${(steer || '').toLowerCase()}`;
+                if (element.textContent !== newText) element.textContent = newText;
+                if (element.className !== newClass) element.className = newClass;
+            }
+        }
+        
+        function updateBooleanIndicator(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const newText = value ? 'YES' : 'NO';
+                const newClass = `boolean-indicator ${value ? 'true' : 'false'}`;
+                if (element.textContent !== newText) element.textContent = newText;
+                if (element.className !== newClass) element.className = newClass;
+            }
+        }
+
+        function updateSensorOptimized(elementId, value) {
+            const sensorEl = document.getElementById(elementId);
+            if (!sensorEl) return;
+            
+            const valueEl = sensorEl.querySelector('value');
+            let newText = '-';
+            
+            // Check for valid numeric value (not NaN, null, or undefined)
+            if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
+                newText = value.toFixed(1);
+            }
+            
+            // Only update if value changed
+            if (valueEl.textContent !== newText) {
+                valueEl.textContent = newText;
+                
+                // Update CSS classes for color coding (only for valid values)
+                sensorEl.classList.remove('close', 'medium', 'far');
+                if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
+                    if (value < 15) {
+                        sensorEl.classList.add('close');
+                    } else if (value < 50) {
+                        sensorEl.classList.add('medium');
+                    } else {
+                        sensorEl.classList.add('far');
+                    }
+                }
+            }
+        }
+
+        function updateCompassOptimized(elementId, value) {
+            const compassEl = document.getElementById(elementId);
+            if (!compassEl) return;
+            
+            const valueEl = compassEl.querySelector('value');
+            let newText = '-';
+            
+            // Check for valid numeric value (not NaN, null, or undefined)
+            if (value !== undefined && value !== null && !isNaN(value) && isFinite(value)) {
+                newText = value.toFixed(0) + '°';
+            }
+            
+            // Only update if value changed
+            if (valueEl.textContent !== newText) {
+                valueEl.textContent = newText;
+            }
+        }
+
+        // Legacy functions (kept for compatibility)
+        function updateSensor(elementId, value) {
+            return updateSensorOptimized(elementId, value);
+        }
+
+        function updateCompass(elementId, value) {
+            return updateCompassOptimized(elementId, value);
+        }
+
+        // Connection status management
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('mqtt-status');
+            if (connected) {
+                statusEl.className = 'status-indicator online';
+                statusEl.innerHTML = '<span class="indicator"></span><span>WebSocket: Connected</span>';
+            } else {
+                statusEl.className = 'status-indicator offline';
+                statusEl.innerHTML = '<span class="indicator"></span><span>WebSocket: Disconnected</span>';
+            }
+        }
+
+        function updateMqttStatus(connected) {
+            const statusEl = document.getElementById('mqtt-status');
+            if (connected) {
+                statusEl.className = 'status-indicator online';
+                statusEl.innerHTML = '<span class="indicator"></span><span>MQTT: Connected</span>';
+            } else {
+                statusEl.className = 'status-indicator offline';
+                statusEl.innerHTML = '<span class="indicator"></span><span>MQTT: Disconnected</span>';
+            }
+        }
+
+        // Auto-refresh every second - optimized for real-time updates
+        let requestCounter = 0;
+        setInterval(() => {
+            // Update data age display
+            if (lastUpdateTime > 0) {
+                const ageSeconds = Math.floor((Date.now() - lastUpdateTime) / 1000);
+                document.getElementById('data-age').textContent = 
+                    `Last Update: ${ageSeconds}s ago`;
+            }
+            
+            requestCounter++;
+            
+            // Reduce API polling - prefer WebSocket updates
+            // Every 10th second: WebSocket status request only
+            // Remove API polling to prevent interference with real-time updates
+            
+            if (requestCounter % 10 === 0) {
+                socket.emit('request_status');
+            }
+        }, 1000);
+
+        // Request initial status
+        socket.emit('request_status');
+    </script>
+</body>
+</html>

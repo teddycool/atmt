@@ -1,0 +1,80 @@
+# Used hardware components
+
+The main hardware components with some references.
+
+## ESP32 WROOM
+ESP32-WROOM-32UE-N16
+
+https://www.mouser.se/c/?q=ESP32-WROOM-32UE-N16
+
+## Motor-control
+
+L293D (SMD)
+
+https://www.mouser.se/datasheet/2/389/l293d-1849134.pdf
+
+## Ultrasonic sensor
+
+HC-SR04 
+
+User-guide: 
+https://www.handsontec.com/dataspecs/HC-SR04-Ultrasonic.pdf
+
+## Accelerometer/gyro
+
+GY-521 
+
+https://www.instructables.com/GY-521-MPU6050-3-Axis-Acceleration-Gyroscope-6DOF-/
+https://randomnerdtutorials.com/arduino-mpu-6050-accelerometer-gyroscope/#more-101585
+
+## Compass
+
+GY-273
+
+https://www.robotpark.com/GY-273-HMC5883L-3-Axis-Magnetic-Electronic-Compass
+
+## Power-supply
+
+3xAA and a 3.3 low dropout voltage regulator LP2989 (SMD) 
+
+https://www.electrokit.com/upload/product/40352/40352989/LP2989.pdf
+
+## Add-ons for HW version 3
+
+* Support for a buck/boost regulator expansion-board, for a stable 5V (https://www.electrokit.com/switchregulator-step-up/step-down-5v-1a)
+* TTL-CMOS level converter for the echo signal
+* Analog voltage measurement for battery energy level
+* Status-led/neopixel
+
+## Material cost pcb HW version 2 with components (approx SEK, 2024 prices)
+
+Around 300 SEK divided as:
+
+* PCB (Aisler.net):  75
+* ESP32 (mouser.se): 40
+* L293 (mouser.se): 100
+* LP2989 (electrokit.se): 60
+* Pinheaders, smd-button, capacitors etc...
+
+## Material cost pcb HW version 3 with components (approx SEK, 2024 prices)
+
+Around 350 SEK divided as:
+
+* PCB (Aisler.net):  75
+* ESP32 (mouser.se): 40
+* L293 (mouser.se): 100
+* LP2989 (electrokit.se): 60
+* Buck/boost regulator (electrokit.se): 50
+* Level converter (electrokit.se): 20
+* Pinheaders, smd-button, capacitors etc...
+
+### Sensors etc
+
+* 4*HC-SR04 (https://www.electrokit.com/avstandsmatare-ultraljud-hc-sr04-2-400cm)
+* 1*GY-521 (https://www.electrokit.com/mpu-6050-accelerometer-3-axel-gyro-monterad-pa-kort)
+* 1*GY-273 (https://www.electrokit.com/elektronisk-kompass-hmc5883l)
+* 6*cables for the sensors (https://www.electrokit.com/labsladd-4-pin-100mm)
+
+### Programming interface
+
+Something like this: https://www.electrokit.com/beefy-3-ftdi-breakout with some cables like this to fit the connector on the pcb: https://www.electrokit.com/labbsladd-40-pin-30cm-hona/hane

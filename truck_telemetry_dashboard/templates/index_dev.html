@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚛 Truck Dashboard Development</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ range(1000,9999) | random }}">
+    <link rel="icon" href="data:,">
+    <style>
+        /* Development mode banner */
+        .dev-banner {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="dev-banner">
+        🔧 DEVELOPMENT MODE - Mock Telemetry Data 🔧
+    </div>
+    
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="{{ url_for('static', filename='ctruck.png') }}" alt="Truck" class="header-truck-icon">
+                <h1>Autonomous Truck Dashboard</h1>
+                <span style="color: #4ecdc4; font-size: 0.8em;">(Development Mode)</span>
+            </div>
+            <div class="status-bar">
+                <div id="mqtt-status" class="status-indicator online">
+                    <span class="indicator"></span>
+                    <span>Mock Data: Active</span>
+                </div>
+                <div id="data-age" class="data-age">
+                    Last Update: Live
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="trucks-container" class="trucks-container">
+                <div class="no-trucks-message" id="no-trucks">
+                    <p>🔍 Loading mock truck data...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let activeTrucks = new Set();
+        let updateInterval;
+
+        function updateTruckDisplay(truckData) {
+            const truck_id = truckData.truck_id;
+            const data = truckData;
+
+            // Create truck container if it doesn't exist  
+            if (!activeTrucks.has(truck_id)) {
+                createTruckContainer(truck_id);
+                activeTrucks.add(truck_id);
+                document.getElementById('no-trucks').style.display = 'none';
+            }
+
+            // Update all the truck data
+            updateTruckTelemetry(truck_id, data);
+        }
+
+        function createTruckContainer(truck_id) {
+            const trucksContainer = document.getElementById('trucks-container');
+            const truckDiv = document.createElement('div');
+            truckDiv.className = 'truck-container';
+            truckDiv.id = `truck-container-${truck_id}`;
+            
+            truckDiv.innerHTML = `
+                <div class="truck-header">
+                    <div class="truck-title">
+                        <h2>🚛 ${truck_id}</h2>
+                    </div>
+                    <div class="truck-status">
+                        <div class="status-indicator" id="truck-status-${truck_id}">
+                            <span class="indicator"></span>
+                            <span>Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="truck-content">
+                    <!-- Control Status (Top Row) -->
+                    <div class="card control-status">
+                        <h2>🎛️ Control Status</h2>
+                        <div class="control-grid">
+                            <div class="control-item">
+                                <label>Mode:</label>
+                                <span id="mode-${truck_id}" class="mode-badge">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Motor PWM:</label>
+                                <span id="motor-pwm-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Steering:</label>
+                                <span id="steering-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Sequence:</label>
+                                <span id="sequence-${truck_id}">-</span>
+                            </div>
+                            <div class="control-item">
+                                <label>Last Update:</label>
+                                <span id="last-update-${truck_id}">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Two-Widget Layout -->
+                    <div class="two-widget-layout">
+                        <!-- Left Widget: Sensor Data -->
+                        <div class="card sensor-widget">
+                            <h2>📡 Sensors</h2>
+                            <div class="sensor-widget-content">
+                                <!-- Left Side: Distance Sensors + Truck -->
+                                <div class="sensor-left-side">
+                                    <div class="sensor-display">
+                                        <div class="sensor-layout">
+                                            <div class="sensor front" id="sensor-front-${truck_id}">
+                                                <label>FRONT</label>
+                                                <value>-</value>
+                                                <unit>cm</unit>
+                                            </div>
+                                            <div class="sensor-row">
+                                                <div class="sensor left" id="sensor-left-${truck_id}">
+                                                    <label>LEFT</label>
+                                                    <value>-</value>
+                                                    <unit>cm</unit>
+                                                </div>
+                                                <div class="truck-icon">
+                                                    <img src="{{ url_for('static', filename='ctruck.png') }}" alt="Truck ${truck_id}">
+                                                </div>
+                                                <div class="sensor right" id="sensor-right-${truck_id}">
+                                                    <label>RIGHT</label>
+                                                    <value>-</value>
+                                                    <unit>cm</unit>
+                                                </div>
+                                            </div>
+                                            <div class="sensor back" id="sensor-back-${truck_id}">
+                                                <label>BACK</label>
+                                                <value>-</value>
+                                                <unit>cm</unit>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Right Side: IMU + Compass -->
+                                <div class="sensor-right-side">
+                                    <div class="compass-section">
+                                        <div class="sensor compass" id="sensor-compass-${truck_id}">
+                                            <label>COMPASS</label>
+                                            <value>-</value>
+                                            <unit>°</unit>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="imu-data-compact">
+                                        <h3>📊 IMU Data</h3>
+                                        <div class="imu-sections">
+                                            <div class="imu-section">
+                                                <h4>Accelerometer</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="acc-x-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="acc-y-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="acc-z-${truck_id}">-</span>
+                                                        <unit>g</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="imu-section">
+                                                <h4>Magnetometer</h4>
+                                                <div class="imu-values">
+                                                    <div class="imu-item">
+                                                        <label>X:</label>
+                                                        <span id="mag-x-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Y:</label>
+                                                        <span id="mag-y-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                    <div class="imu-item">
+                                                        <label>Z:</label>
+                                                        <span id="mag-z-${truck_id}">-</span>
+                                                        <unit>µT</unit>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Widget: Navigation -->
+                        <div class="card navigation-widget">
+                            <h2>🧭 Navigation</h2>
+                            <div class="nav-content">
+                                <div class="nav-grid">
+                                    <div class="nav-item">
+                                        <label>Track Width:</label>
+                                        <span id="track-width-${truck_id}">-</span>
+                                        <unit>cm</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Center Error:</label>
+                                        <span id="center-error-${truck_id}">-</span>
+                                        <unit>cm</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Front Blocked:</label>
+                                        <span id="front-blocked-${truck_id}">-</span>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Heading:</label>
+                                        <span id="heading-${truck_id}">-</span>
+                                        <unit>°</unit>
+                                    </div>
+                                    <div class="nav-item">
+                                        <label>Yaw Rate:</label>
+                                        <span id="yaw-rate-${truck_id}">-</span>
+                                        <unit>°/s</unit>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            trucksContainer.appendChild(truckDiv);
+        }
+
+        function updateTruckTelemetry(truck_id, data) {
+            // Update control status
+            document.getElementById(`mode-${truck_id}`).textContent = data.mode || '-';
+            document.getElementById(`motor-pwm-${truck_id}`).textContent = data.cmd_pwm || '-';
+            document.getElementById(`steering-${truck_id}`).textContent = data.cmd_steer || '-';
+            document.getElementById(`sequence-${truck_id}`).textContent = data.seq || '-';
+            document.getElementById(`last-update-${truck_id}`).textContent = data.received_at || '-';
+
+            // Update sensor readings
+            const sensorMappings = [
+                ['sensor-front', 'uf'],
+                ['sensor-left', 'ul'], 
+                ['sensor-right', 'ur'],
+                ['sensor-back', 'ub'],
+                ['sensor-compass', 'compass']
+            ];
+
+            sensorMappings.forEach(([elementPrefix, dataKey]) => {
+                const element = document.getElementById(`${elementPrefix}-${truck_id}`);
+                if (element && data[dataKey] !== undefined) {
+                    const valueElement = element.querySelector('value');
+                    if (valueElement) {
+                        // Handle NaN values gracefully
+                        let displayValue = data[dataKey];
+                        if (isNaN(displayValue) || displayValue === null) {
+                            displayValue = '-';
+                        } else if (typeof displayValue === 'number') {
+                            displayValue = displayValue.toFixed(1);
+                        }
+                        valueElement.textContent = displayValue;
+                        
+                        // Color coding for distance sensors (only if valid number)
+                        if (['uf', 'ul', 'ur', 'ub'].includes(dataKey)) {
+                            const value = parseFloat(data[dataKey]);
+                            if (!isNaN(value) && isFinite(value)) {
+                                if (value < 10) {
+                                    element.className = element.className.replace(/ danger| warning| safe/g, '') + ' danger';
+                                } else if (value < 20) {
+                                    element.className = element.className.replace(/ danger| warning| safe/g, '') + ' warning';
+                                } else {
+                                    element.className = element.className.replace(/ danger| warning| safe/g, '') + ' safe';
+                                }
+                            } else {
+                                // Remove color classes for invalid values
+                                element.className = element.className.replace(/ danger| warning| safe/g, '');
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update navigation data with NaN handling
+            const navMappings = [
+                ['track-width', 'width'],
+                ['center-error', 'center_error'],
+                ['heading', 'heading'],
+                ['yaw-rate', 'yaw_rate']
+            ];
+            
+            navMappings.forEach(([elementId, dataKey]) => {
+                const element = document.getElementById(`${elementId}-${truck_id}`);
+                if (element) {
+                    let value = data[dataKey];
+                    if (isNaN(value) || value === null || value === undefined) {
+                        element.textContent = '-';
+                    } else if (typeof value === 'number') {
+                        element.textContent = value.toFixed(1);
+                    } else {
+                        element.textContent = value;
+                    }
+                }
+            });
+            
+            // Handle front_blocked separately (boolean)
+            const frontBlockedElement = document.getElementById(`front-blocked-${truck_id}`);
+            if (frontBlockedElement) {
+                frontBlockedElement.textContent = data.front_blocked ? 'Yes' : 'No';
+            }
+
+            // Update IMU data with NaN handling
+            const imuMappings = [
+                ['acc-x', 'acc_x'],
+                ['acc-y', 'acc_y'],
+                ['acc-z', 'acc_z'],
+                ['mag-x', 'mag_x'],
+                ['mag-y', 'mag_y'],
+                ['mag-z', 'mag_z']
+            ];
+            
+            imuMappings.forEach(([elementId, dataKey]) => {
+                const element = document.getElementById(`${elementId}-${truck_id}`);
+                if (element) {
+                    let value = data[dataKey];
+                    if (isNaN(value) || value === null || value === undefined) {
+                        element.textContent = '-';
+                    } else if (typeof value === 'number') {
+                        element.textContent = value.toFixed(1);
+                    } else {
+                        element.textContent = value;
+                    }
+                }
+            });
+
+            // Update mode badge styling
+            const modeElement = document.getElementById(`mode-${truck_id}`);
+            if (modeElement && data.mode) {
+                modeElement.className = `mode-badge mode-${data.mode.toLowerCase()}`;
+            }
+        }
+
+        function fetchTruckData() {
+            fetch('/api/trucks')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.trucks) {
+                        Object.values(data.trucks).forEach(truckData => {
+                            updateTruckDisplay(truckData);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching truck data:', error);
+                });
+        }
+
+        // Start polling for data
+        function startDataPolling() {
+            fetchTruckData(); // Initial fetch
+            updateInterval = setInterval(fetchTruckData, 1000); // Poll every second  
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 Dashboard Development Mode Started');
+            startDataPolling();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+# PlatformIO
+.pio/
+.vscode/
+!.vscode/extensions.json
+.cache/
+.tmp/
+.vs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+*.env
+.pytest_cache/
+.coverage
+.tox/
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# KiCad
+*.bak
+*.bck
+*-backups/
+*-cache.lib
+*-cache.kicad_pcb
+fp-info-cache
+*.net
+*.dsn
+*.ses
+rescue-backup/
+_autosave-*
+*.tmp
+*.lck
+*-rescue.lib
+*-rescue.dcm
+*.kicad_pcb-bak
+
+# FreeCAD
+*.FCStd1
+*.FCBak
+*_backup_*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+*.swp
+*.swo
+*.tmp
+*.temp
+.directory
+
+# IDE/Editor files
+*.sublime-*
+*.code-workspace
+.idea/
+*.iml
+*.iws
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json
+.vscode/browse.c_cpp.db*
+.vscode/ipch/
+
+# Build/Compilation artifacts
+build/
+dist/
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# Log files
+*.log
+logs/
+
+# Package manager files
+node_modules/
+package-lock.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets and credentials
+*.key
+*.pem
+*.p12
+*password*
+*credential*
+
+# Documentation build output
+.asciidoctor/
+
+# Temporary files
+*.orig
+*.rej
+.*.orig
+.*.rej
+
+EmbeddedSw/compile_commands.json
+
+MapClient/venv/
