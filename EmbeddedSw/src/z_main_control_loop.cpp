@@ -58,7 +58,7 @@ struct ControlConfig {
   int pwmReverse = -95;
 
   // Timing
-  uint32_t telemetryPeriodMs = 500;  // 1 Hz to reduce heap pressure
+  uint32_t telemetryPeriodMs = 500;  
   uint32_t recoverReverseMs  = 1500;
   uint32_t recoverTurnMs     = 1000;
   uint32_t stuckFrontMs      = 500;
